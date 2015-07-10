@@ -1,6 +1,6 @@
 Django Ultracache
 =================
-**App enabling the use of jQuery UI autocomplete widget for ModelChoiceFields with minimal configuration required.**
+**Drop-in replacement for Django's template fragment caching. Provides automatic cache invalidation.**
 
 .. contents:: Contents
     :depth: 5
@@ -8,68 +8,54 @@ Django Ultracache
 Installation
 ------------
 
-#. Install or add ``django-simple-autocomplete`` to your Python path.
+#. Install or add ``django-ultracache`` to your Python path.
 
-#. Add ``simple_autocomplete`` to your ``INSTALLED_APPS`` setting.
-
-#. Add (r'^simple-autocomplete/', include('simple_autocomplete.urls')) to urlpatterns.
-
-#. Ensure jQuery core, jQuery UI Javascript and jQuery UI CSS is loaded by your templates. Your jQueryUI bundle must include the autocomplete widget described at http://docs.jquery.com/UI/Autocomplete.
+#. Add ``ultracache`` to your ``INSTALLED_APPS`` setting.
 
 Usage
 -----
 
-Django by default renders a select widget (a.k.a. combobox or dropdown) for
-foreign key fields. You can change the widget to an autocomplete widget by
-adding the model to the SIMPLE_AUTOCOMPLETE_MODELS dictionary in your
-settings file.  For instance, to use the autocomplete widget when selecting a
-user do::
+``django-ultracache`` provides a template tag ``{% ultracache %}`` that functions like Django's
+standard cache template tag, with these ecxeptions.
 
-    SIMPLE_AUTOCOMPLETE = {'auth.user': {'search_field': 'username'}}
+#. It takes the sites framework into consideration, allowing different caching per site.
 
-The dictionary format allows arbitrary parameters to be introduced in future.
-Parameter ``threshold`` indicates the minimum number of options required before
-the widget is rendered as an autocomplete widget.  If the threshold is not met
-the default widget is rendered::
+#. It allows undefined variables to be passed as arguments, thus simplifying the template.
 
-    SIMPLE_AUTOCOMPLETE = {'auth.user': {'threshold': 10}}
+#. Crucially, it is aware of model objects that are subjected to its caching. When an object is modified
+   all affected cache key are automatically expired. This allows the user to set longer expiry times without having
+   to worry about stale content.
 
-Parameter ``max_items`` indicates the maximum number of matches to display in the autocomplete dropdown. It defaults to 10.::
+Simplest use case::
 
-    SIMPLE_AUTOCOMPLETE = {'auth.user': {'max_items': 10}}
+    {% load ultracache_tags %}
+    {% ultracache 3600 'my_identifier' object 123 undefined 'string' %}
+        {{ object.title }}
+    {% endultracache %}
 
-Parameter ``duplicate_format_function`` is a lambda function that enables a custom string should more than one item in the autocomplete dropdown have the same string value.
-It defaults to displaying the content type name. Set it using a lambda function, eg.::
+The tag can be nested. ``ultracache`` is aware of all model objects that are subjected to its caching.
+In this example cache keys ``outer`` and ``inner_one`` are expired when object one is changed but
+cache key ``inner_two`` remains unaffected::
 
-    SIMPLE_AUTOCOMPLETE = {'auth.user': {'duplicate_format_function': lambda obj, model, content_type: 'id: %s' % obj.id}}
+    {% load ultracache_tags %}
+    {% ultracache 1200 'outer' %}
+        {% ultracache 1200 'inner_one' %}
+            title = {{ one.title }}
+        {% endultracache %}
+        {% ultracache 1200 'inner_two' %}
+            title = {{ two.title }}
+        {% endultracache %}
+    {% endultracache %}
 
-The product attempts to use a field ``title`` for filtering the list. If the
-model has no field ``title`` then the first CharField is used. Eg. for the user
-model the field ``username`` is used.
+Django's ``{% include %}`` tag passes the context along for rendering. Any template tag that passes
+along context will make the caching tag aware of the rendered objects. When these objects change the
+affected cache keys are expired.
 
-The widget can be used implicitly in a form. The declaration of
-``ModelChoiceField`` is all that is required::
+How does it work?
+-----------------
 
-    class MyForm(forms.Form):
-        user = forms.ModelChoiceField(queryset=User.objects.all(), initial=3)
-
-The widget can be used explicitly in a form. In such a case you must provide an
-URL which returns results as JSON with format [(value, label), (value, label),...].
-The ``initial`` and ``initial_display`` parameters are only required if there is
-a starting value::
-
-    from simple_autocomplete.widgets import AutoCompleteWidget
-
-    class MyForm(forms.Form):
-        user = forms.ModelChoiceField(
-            queryset=User.objects.all(),
-            initial=3,
-            widget=AutoCompleteWidget(
-                url='/custom-json-query',
-                initial_display='John Smith'
-            )
-        )
-
-The ability to specify an URL for the widget enables you to hook up to other
-more advanced autocomplete query engines if you wish.
+``django-ultracache`` monkey patches ``django.template.base.Variable._resolve_lookup`` to make a record of
+model objects as they are resolved. The ``ultracache`` template tag inspects the list of objects contained
+within it and keeps a registry in Django's caching backend. A ``post_save`` signal handler monitors objects
+for changes and expires the appropriate cache keys.
 
