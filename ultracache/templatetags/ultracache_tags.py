@@ -8,6 +8,10 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.conf import settings
 
+from ultracache import tracker
+from ultracache.utils import cache_meta
+
+
 register = template.Library()
 
 
@@ -38,13 +42,14 @@ class UltraCacheNode(CacheNode):
                 '"cache" tag got a non-integer timeout value: %r' % expire_time
             )
 
-        # Set a list on the request. Context may be pushed and popped and is
-        # not reliable.
-        if not hasattr(context, '_ultracache'):
-            setattr(context, '_ultracache', [])
+        # Set a list on the context
+        request = context.get('request', None)
+        if not '_ultracache_key' in context:
+            tracker_key = tracker.get_new_key()
+            context['_ultracache_key'] = tracker_key
             start_index = 0
         else:
-            start_index = len(context._ultracache)
+            start_index = len(tracker[context['_ultracache_key']])
 
         vary_on = []
         if 'django.contrib.sites' in settings.INSTALLED_APPS:
@@ -59,57 +64,17 @@ class UltraCacheNode(CacheNode):
                 r = unicode(r)
             vary_on.append(r)
 
-        path = None
-        if 'request' in context:
-            path = context['request'].get_full_path()
-
         cache_key = make_template_fragment_key(self.fragment_name, vary_on)
         value = cache.get(cache_key)
         if value is None:
             value = self.nodelist.render(context)
             cache.set(cache_key, value, expire_time)
-
-            # Cache the cache keys and paths each object appears in
-            to_set = {}
-            to_set_paths = {}
-            to_set_objects = []
-            for ctid, obj_pk in context._ultracache[start_index:]:
-                key = 'ucache-%s-%s' % (ctid, obj_pk)
-                to_set.setdefault(key, cache.get(key, []))
-                if cache_key not in to_set[key]:
-                    to_set[key].append(cache_key)
-
-                key = 'ucache-pth-%s-%s' % (ctid, obj_pk)
-                to_set_paths.setdefault(key, cache.get(key, []))
-                if path not in to_set_paths[key]:
-                    to_set_paths[key].append(path)
-
-                tu = (ctid, obj_pk)
-                if tu not in to_set_objects:
-                    to_set_objects.append(tu)
-
-            if to_set:
-                try:
-                    cache.set_many(to_set, 86400)
-                except NotImplementedError:
-                    for k, v in to_set.items():
-                        cache.set(k, v, 86400)
-
-            if to_set_paths:
-                try:
-                    cache.set_many(to_set_paths, 86400)
-                except NotImplementedError:
-                    for k, v in to_set_paths.items():
-                        cache.set(k, v, 86400)
-
-            if to_set_objects:
-                cache.set(cache_key + '-objs', to_set_objects, 86400)
-
+            cache_meta(request, tracker[context['_ultracache_key']], cache_key, start_index)
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
             for tu in cache.get(cache_key + '-objs', []):
-                context._ultracache.append(tu)
+                tracker[context['_ultracache_key']].append(tu)
 
         return value
 

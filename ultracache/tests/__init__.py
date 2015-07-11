@@ -5,6 +5,7 @@ from django.test.client import Client, RequestFactory
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 from django import template
+from django.core.cache import cache
 from django.conf import settings
 
 from ultracache.tests.models import DummyModel, DummyForeignModel
@@ -39,6 +40,7 @@ class TemplateTagsTestCase(TestCase):
         cls.request._path = '/'
         cls.request.get_full_path = lambda: cls.request._path
         cls.client = Client()
+        cache.clear()
         dummy_proxy.clear()
 
         # Add sites
@@ -261,6 +263,7 @@ class DecoratorTestCase(TestCase):
         cls.request._path = '/'
         cls.request.get_full_path = lambda: cls.request._path
         cls.client = Client()
+        cache.clear()
         dummy_proxy.clear()
 
         # Add sites

@@ -9,6 +9,11 @@ except ImportError:
     from django.utils.module_loading import import_by_path as importer
 from django.conf import settings
 
+if 'django.core.context_processors.request' not in \
+    settings.TEMPLATE_CONTEXT_PROCESSORS:
+    raise RuntimeError('django.core.context_processors.request is required \
+        in TEMPLATE_CONTEXT_PROCESSORS')
+
 import ultracache.monkey
 
 
@@ -40,8 +45,6 @@ def on_post_save(sender, **kwargs):
 
             # Invalidate paths in reverse caching proxy
             key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
-            #if getattr(obj ,'code', '') == 'two':
-            #    import pdb;pdb.set_trace()
             if purger is not None:
                 for path in cache.get(key, []):
                     purger(path)

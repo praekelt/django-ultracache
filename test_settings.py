@@ -28,6 +28,10 @@ SITE_ID = 1
 
 TEMPLATE_DIRS = (os.path.realpath(os.path.dirname(__file__)) + '/ultracache/tests/templates/',)
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.core.context_processors.request',
+)
+
 ULTRACACHE = {
     'purge': {'method': 'ultracache.tests.dummy_purger'}
 }

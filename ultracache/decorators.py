@@ -5,6 +5,9 @@ from django.http import HttpResponse
 from django.core.cache import cache
 from django.conf import settings
 
+from ultracache import tracker
+from ultracache.utils import cache_meta
+
 
 class cached_get(object):
 
@@ -34,14 +37,20 @@ class cached_get(object):
                 li.append(eval(arg))
 
             hashed = md5.new(':'.join([str(l) for l in li])).hexdigest()
-            key = 'ucache-get-%s' % hashed
-            cached = cache.get(key, None)
-            if cached is not None:
-                return HttpResponse(cached)
-            response = f(cls, request, *args, **kwargs)
-            # This decorator isn't supposed to be applied to gets that may
-            # redirect, so don't try to catch those errors.
-            cache.set(key, response.rendered_content, self.timeout)
+            cache_key = 'ucache-get-%s' % hashed
+            cached = cache.get(cache_key, None)
+
+            #import pdb;pdb.set_trace()
+            if cached is None:
+                tracker_key = tracker.get_new_key()
+                kwargs['_ultracache_key'] = tracker_key
+                response = f(cls, request, *args, **kwargs)
+                if hasattr(response, 'rendered_content'):
+                    cache.set(cache_key, response.rendered_content, self.timeout)
+                    cache_meta(request, tracker[tracker_key], cache_key)
+            else:
+                response = HttpResponse(cached)
+
             return response
 
         return wrapped_f
