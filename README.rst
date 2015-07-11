@@ -2,6 +2,10 @@ Django Ultracache
 =================
 **Drop-in replacement for Django's template fragment caching. Provides automatic Django cache invalidation and reverse caching proxy purging.**
 
+.. figure:: https://travis-ci.org/praekelt/django-ultracache.svg?branch=develop
+   :align: center
+   :alt: Travis
+
 .. contents:: Contents
     :depth: 5
 
