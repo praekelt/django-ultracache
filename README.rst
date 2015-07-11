@@ -12,6 +12,8 @@ Installation
 
 #. Add ``ultracache`` to your ``INSTALLED_APPS`` setting.
 
+#. Ensure ``django.core.context_processors.request`` is in ``TEMPLATE_CONTEXT_PROCESSORS`` setting.
+
 Usage
 -----
 
@@ -46,10 +48,6 @@ cache key ``inner_two`` remains unaffected::
             title = {{ two.title }}
         {% endultracache %}
     {% endultracache %}
-
-Django's ``{% include %}`` tag passes the context along for rendering. Any template tag that passes
-along context will make the caching tag aware of the rendered objects. When these objects change the
-affected cache keys are expired.
 
 How does it work?
 -----------------

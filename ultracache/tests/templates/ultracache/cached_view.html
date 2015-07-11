@@ -14,8 +14,10 @@ bla
         {{ three.points_to.title }}
         counter three = {{ counter }}
     {% endultracache %}
+    {% ultracache 1200 'test_ultracache_invalidate_render_view' %}
+        {% render_view 'render-view' %}
+    {% endultracache %}
     {% ultracache 1200 'test_ultracache_invalidate_include %}
-        <!-- renders one's title and is affected by invalidation -->
         {% include "ultracache/include_me.html" %}
     {% endultracache %}
 {% endultracache %}

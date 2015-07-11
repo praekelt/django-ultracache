@@ -7,8 +7,6 @@ from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
-from ultracache import tracker
-
 
 def _my_resolve_lookup(self, context):
         """
@@ -53,10 +51,9 @@ def _my_resolve_lookup(self, context):
                             # raised in the function itself.
                             current = settings.TEMPLATE_STRING_IF_INVALID  # invalid method call
                 elif isinstance(current, Model):
-                    if '_ultracache_key' in context:
-                        # get_for_model itself is cached
-                        ct = ContentType.objects.get_for_model(current.__class__)
-                        tracker[context['_ultracache_key']].append((ct.id, current.pk))
+                    # get_for_model itself is cached
+                    ct = ContentType.objects.get_for_model(current.__class__)
+                    context['request']._ultracache.append((ct.id, current.pk))
 
         except Exception as e:
             if getattr(e, 'silent_variable_failure', False):

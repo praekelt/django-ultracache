@@ -8,7 +8,6 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.conf import settings
 
-from ultracache import tracker
 from ultracache.utils import cache_meta
 
 
@@ -42,14 +41,13 @@ class UltraCacheNode(CacheNode):
                 '"cache" tag got a non-integer timeout value: %r' % expire_time
             )
 
-        # Set a list on the context
-        request = context.get('request', None)
-        if not '_ultracache_key' in context:
-            tracker_key = tracker.get_new_key()
-            context['_ultracache_key'] = tracker_key
+        # Set a list on the request
+        request = context['request']
+        if not hasattr(request, '_ultracache'):
+            setattr(request, '_ultracache', [])
             start_index = 0
         else:
-            start_index = len(tracker[context['_ultracache_key']])
+            start_index = len(request._ultracache)
 
         vary_on = []
         if 'django.contrib.sites' in settings.INSTALLED_APPS:
@@ -69,12 +67,12 @@ class UltraCacheNode(CacheNode):
         if value is None:
             value = self.nodelist.render(context)
             cache.set(cache_key, value, expire_time)
-            cache_meta(request, tracker[context['_ultracache_key']], cache_key, start_index)
+            cache_meta(request, request._ultracache, cache_key, start_index)
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
             for tu in cache.get(cache_key + '-objs', []):
-                tracker[context['_ultracache_key']].append(tu)
+                request._ultracache.append(tu)
 
         return value
 

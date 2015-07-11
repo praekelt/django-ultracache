@@ -5,7 +5,6 @@ from django.http import HttpResponse
 from django.core.cache import cache
 from django.conf import settings
 
-from ultracache import tracker
 from ultracache.utils import cache_meta
 
 
@@ -42,12 +41,11 @@ class cached_get(object):
 
             #import pdb;pdb.set_trace()
             if cached is None:
-                tracker_key = tracker.get_new_key()
-                kwargs['_ultracache_key'] = tracker_key
+                request._ultracache = []
                 response = f(cls, request, *args, **kwargs)
                 if hasattr(response, 'rendered_content'):
                     cache.set(cache_key, response.rendered_content, self.timeout)
-                    cache_meta(request, tracker[tracker_key], cache_key)
+                    cache_meta(request, request._ultracache, cache_key)
             else:
                 response = HttpResponse(cached)
 

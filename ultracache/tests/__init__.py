@@ -122,11 +122,8 @@ class TemplateTagsTestCase(TestCase):
         t = template.Template("{% load ultracache_tags %}\
             {% ultracache 1200 'test_ultracache_undefined' aaa %}1{% endultracache %}"
         )
-        context = template.Context({})
-        try:
-            t.render(context)
-        except:
-            self.fail("Code is not handling missing request properly")
+        context = template.Context()
+        self.assertRaises(KeyError, t.render, context)
 
     def test_invalidation(self):
         """Directly render template
@@ -150,11 +147,9 @@ class TemplateTagsTestCase(TestCase):
                     counter three = {{ counter }}
                 {% endultracache %}
                 {% ultracache 1200 'test_ultracache_invalidate_render_view' %}
-                    <!-- renders one's title but remains unaffected by invalidation -->
                     {% render_view 'render-view' %}
                 {% endultracache %}
                 {% ultracache 1200 'test_ultracache_invalidate_include %}
-                    <!-- renders one's title and is affected by invalidation -->
                     {% include "ultracache/include_me.html" %}
                 {% endultracache %}
             {% endultracache %}"""
@@ -199,7 +194,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 1' in result)
         self.failUnless('counter three = 2' in result)
-        self.failUnless('render_view = One' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/aaa/'))
 
@@ -223,7 +218,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 2' in result)
-        self.failUnless('render_view = One' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/bbb/'))
 
@@ -249,7 +244,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 4' in result)
-        self.failUnless('render_view = One' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/ccc/'))
 
@@ -284,6 +279,7 @@ class DecoratorTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('render_view = One' in result)
         self.failUnless('include = One' in result)
 
         # Change object one
@@ -294,6 +290,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
 
         # Change object two
@@ -305,6 +302,7 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
         self.failIf('title = Two' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
 
         # Change object three
@@ -318,4 +316,5 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = Two' in result)
         self.failUnless('title = Threxe' in result)
         self.failIf('title = Three' in result)
+        self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
