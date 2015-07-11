@@ -1,18 +1,15 @@
 from django.core.cache import cache
 
 
-def cache_meta(request, tuples, cache_key, start_index=0):
+def cache_meta(request, cache_key, start_index=0):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache.  """
-
-    if not request:
-        return
 
     path = request.get_full_path()
     to_set = {}
     to_set_paths = {}
     to_set_objects = []
-    for ctid, obj_pk in tuples[start_index:]:
+    for ctid, obj_pk in request._ultracache[start_index:]:
         key = 'ucache-%s-%s' % (ctid, obj_pk)
         to_set.setdefault(key, cache.get(key, []))
         if cache_key not in to_set[key]:

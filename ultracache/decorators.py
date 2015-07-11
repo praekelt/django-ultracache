@@ -45,7 +45,7 @@ class cached_get(object):
                 response = f(cls, request, *args, **kwargs)
                 if hasattr(response, 'rendered_content'):
                     cache.set(cache_key, response.rendered_content, self.timeout)
-                    cache_meta(request, request._ultracache, cache_key)
+                    cache_meta(request, cache_key)
             else:
                 response = HttpResponse(cached)
 

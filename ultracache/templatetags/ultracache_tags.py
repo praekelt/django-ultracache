@@ -67,7 +67,7 @@ class UltraCacheNode(CacheNode):
         if value is None:
             value = self.nodelist.render(context)
             cache.set(cache_key, value, expire_time)
-            cache_meta(request, request._ultracache, cache_key, start_index)
+            cache_meta(request, cache_key, start_index)
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
