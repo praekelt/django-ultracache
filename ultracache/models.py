@@ -40,6 +40,8 @@ def on_post_save(sender, **kwargs):
 
             # Invalidate paths in reverse caching proxy
             key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
+            #if getattr(obj ,'code', '') == 'two':
+            #    import pdb;pdb.set_trace()
             if purger is not None:
                 for path in cache.get(key, []):
                     purger(path)

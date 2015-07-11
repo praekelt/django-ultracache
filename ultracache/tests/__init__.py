@@ -20,6 +20,7 @@ class DummyProxy(dict):
 
     def purge(self, path):
         if path in self:
+            print "PURGE %s" % path
             del self[path]
 
 dummy_proxy = DummyProxy()
@@ -38,6 +39,7 @@ class TemplateTagsTestCase(TestCase):
         cls.request._path = '/'
         cls.request.get_full_path = lambda: cls.request._path
         cls.client = Client()
+        dummy_proxy.clear()
 
         # Add sites
         cls.first_site = Site.objects.create(name='first', domain='first.com')
@@ -125,6 +127,8 @@ class TemplateTagsTestCase(TestCase):
             self.fail("Code is not handling missing request properly")
 
     def test_invalidation(self):
+        """Directly render template
+        """
         one = DummyModel.objects.create(title='One', code='one')
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
@@ -145,7 +149,7 @@ class TemplateTagsTestCase(TestCase):
                 {% endultracache %}
                 {% ultracache 1200 'test_ultracache_invalidate_render_view' %}
                     <!-- renders one's title but remains unaffected by invalidation -->
-                    {% render_view 'aview' %}
+                    {% render_view 'render-view' %}
                 {% endultracache %}
                 {% ultracache 1200 'test_ultracache_invalidate_include %}
                     <!-- renders one's title and is affected by invalidation -->
@@ -153,6 +157,8 @@ class TemplateTagsTestCase(TestCase):
                 {% endultracache %}
             {% endultracache %}"""
         )
+
+        # Initial render
         context = template.Context({
             'request' : self.request,
             'one': one,
@@ -184,6 +190,7 @@ class TemplateTagsTestCase(TestCase):
         })
         self.request._path = '/bbb/'
         result = t.render(context)
+        dummy_proxy.cache('/bbb/', result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -206,6 +213,7 @@ class TemplateTagsTestCase(TestCase):
         })
         self.request._path = '/ccc/'
         result = t.render(context)
+        dummy_proxy.cache('/ccc/', result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -229,6 +237,7 @@ class TemplateTagsTestCase(TestCase):
         })
         self.request._path = '/ddd/'
         result = t.render(context)
+        dummy_proxy.cache('/ddd/', result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -241,3 +250,69 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('render_view = One' in result)
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/ccc/'))
+
+
+class DecoratorTestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.request = RequestFactory()
+        cls.request.method = 'GET'
+        cls.request._path = '/'
+        cls.request.get_full_path = lambda: cls.request._path
+        cls.client = Client()
+        dummy_proxy.clear()
+
+        # Add sites
+        cls.first_site = Site.objects.create(name='first', domain='first.com')
+        cls.second_site = Site.objects.create(name='second', domain='second.com')
+
+    def test_decorator(self):
+        """Render template through a view
+        """
+        one = DummyModel.objects.create(title='One', code='one')
+        two = DummyModel.objects.create(title='Two', code='two')
+        three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
+        url = reverse('cached-view')
+
+        # Initial render
+        response = self.client.get(url)
+        result = response.content
+        self.assertEqual(response.status_code, 200)
+        self.failUnless('title = One' in result)
+        self.failUnless('title = Two' in result)
+        self.failUnless('include = One' in result)
+
+        # Change object one
+        one.title = 'Onxe'
+        one.save()
+        response = self.client.get(url)
+        result = response.content
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Two' in result)
+        self.failUnless('include = Onxe' in result)
+
+        # Change object two
+        two.title = 'Twxo'
+        two.save()
+        response = self.client.get(url)
+        result = response.content
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('include = Onxe' in result)
+
+        # Change object three
+        three.title = 'Threxe'
+        three.save()
+        response = self.client.get(url)
+        result = response.content
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('title = Threxe' in result)
+        self.failIf('title = Three' in result)
+        self.failUnless('include = Onxe' in result)

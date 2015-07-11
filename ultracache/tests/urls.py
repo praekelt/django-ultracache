@@ -6,8 +6,13 @@ from ultracache.tests import views
 urlpatterns = patterns(
     '',
     url(
-        r'^aview/$',
-        views.AView.as_view(),
-        name='aview'
+        r'^render-view/$',
+        views.RenderView.as_view(),
+        name='render-view'
+    ),
+    url(
+        r'^cached-view/$',
+        views.CachedView.as_view(),
+        name='cached-view'
     )
 )
