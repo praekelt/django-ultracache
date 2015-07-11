@@ -18,7 +18,7 @@ Usage
 -----
 
 ``django-ultracache`` provides a template tag ``{% ultracache %}`` that functions like Django's
-standard cache template tag, with these ecxeptions.
+standard cache template tag, with these exceptions.
 
 #. It takes the sites framework into consideration, allowing different caching per site.
 
@@ -50,6 +50,18 @@ cache key ``inner_two`` remains unaffected::
             title = {{ two.title }}
         {% endultracache %}
     {% endultracache %}
+
+``django-ultracache`` also provides a decorator ``cached_get`` to cache your views::
+
+    from ultracache.decorators import cached_get
+
+
+    class CachedView(TemplateView):
+        template_name = "ultracache/cached_view.html"
+
+        @cached_get(300, "request.get_full_path()", 456)
+        def get(self, *args, **kwargs):
+            return super(CachedView, self).get(*args, **kwargs)
 
 You can create custom reverse caching proxy purgers. See ``purgers.py`` for examples::
 
