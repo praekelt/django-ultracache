@@ -1,6 +1,6 @@
 Django Ultracache
 =================
-**Drop-in replacement for Django's template fragment caching. Provides automatic cache invalidation.**
+**Drop-in replacement for Django's template fragment caching. Provides automatic Django cache invalidation and reverse caching proxy purging.**
 
 .. contents:: Contents
     :depth: 5
@@ -28,6 +28,8 @@ standard cache template tag, with these ecxeptions.
    all affected cache key are automatically expired. This allows the user to set longer expiry times without having
    to worry about stale content.
 
+#. The cache invalidation can be extended to issue purge commands to Varnish, Nginx or other reverse caching proxies.
+
 Simplest use case::
 
     {% load ultracache_tags %}
@@ -48,6 +50,12 @@ cache key ``inner_two`` remains unaffected::
             title = {{ two.title }}
         {% endultracache %}
     {% endultracache %}
+
+You can create custom reverse caching proxy purgers. See ``purgers.py`` for examples::
+
+    ULTRACACHE = {
+        'purge': {'method': 'myproduct.purgers.squid'}
+    }
 
 How does it work?
 -----------------
