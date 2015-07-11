@@ -27,3 +27,7 @@ CACHES = {
 SITE_ID = 1
 
 TEMPLATE_DIRS = (os.path.realpath(os.path.dirname(__file__)) + '/ultracache/tests/templates/',)
+
+ULTRACACHE = {
+    'purge': {'method': 'ultracache.tests.dummy_purger'}
+}

@@ -10,12 +10,33 @@ from django.conf import settings
 from ultracache.tests.models import DummyModel, DummyForeignModel
 
 
+class DummyProxy(dict):
+
+    def cache(self, path, value):
+        self[path] = value
+
+    def is_cached(self, path):
+        return path in self
+
+    def purge(self, path):
+        if path in self:
+            del self[path]
+
+dummy_proxy = DummyProxy()
+
+
+def dummy_purger(path):
+    dummy_proxy.purge(path)
+
+
 class TemplateTagsTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.request = RequestFactory()
         cls.request.method = 'GET'
+        cls.request._path = '/'
+        cls.request.get_full_path = lambda: cls.request._path
         cls.client = Client()
 
         # Add sites
@@ -139,7 +160,9 @@ class TemplateTagsTestCase(TestCase):
             'three': three,
             'counter': 1
         })
+        self.request._path = '/aaa/'
         result = t.render(context)
+        dummy_proxy.cache('/aaa/', result)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
         self.failUnless('counter one = 1' in result)
@@ -147,6 +170,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter three = 1' in result)
         self.failUnless('render_view = One' in result)
         self.failUnless('include = One' in result)
+        self.failUnless(dummy_proxy.is_cached('/aaa/'))
 
         # Change object one
         one.title = 'Onxe'
@@ -158,6 +182,7 @@ class TemplateTagsTestCase(TestCase):
             'three': three,
             'counter': 2
         })
+        self.request._path = '/bbb/'
         result = t.render(context)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
@@ -167,6 +192,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter three = 2' in result)
         self.failUnless('render_view = One' in result)
         self.failUnless('include = Onxe' in result)
+        self.failIf(dummy_proxy.is_cached('/aaa/'))
 
         # Change object two
         two.title = 'Twxo'
@@ -178,6 +204,7 @@ class TemplateTagsTestCase(TestCase):
             'three': three,
             'counter': 3
         })
+        self.request._path = '/ccc/'
         result = t.render(context)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
@@ -188,6 +215,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter three = 2' in result)
         self.failUnless('render_view = One' in result)
         self.failUnless('include = Onxe' in result)
+        self.failIf(dummy_proxy.is_cached('/bbb/'))
 
         # Change object three
         three.title = 'Threxe'
@@ -199,6 +227,7 @@ class TemplateTagsTestCase(TestCase):
             'three': three,
             'counter': 4
         })
+        self.request._path = '/ddd/'
         result = t.render(context)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
@@ -211,3 +240,4 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter three = 4' in result)
         self.failUnless('render_view = One' in result)
         self.failUnless('include = Onxe' in result)
+        self.failIf(dummy_proxy.is_cached('/ccc/'))

@@ -54,7 +54,10 @@ def _my_resolve_lookup(self, context):
                     if hasattr(context, '_ultracache'):
                         # get_for_model itself is cached
                         ct = ContentType.objects.get_for_model(current.__class__)
-                        context._ultracache.append((ct.id, current.pk))
+                        path = None
+                        if 'request' in context:
+                            path = context['request'].get_full_path()
+                        context._ultracache.append((ct.id, current.pk, path))
 
         except Exception as e:
             if getattr(e, 'silent_variable_failure', False):

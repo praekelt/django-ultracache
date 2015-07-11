@@ -14,6 +14,7 @@ setup(
     ],
     install_requires = [
         'django>=1.4,<1.8',
+        'requests',
     ],
     tests_require=[
         'django-setuptest>=0.1.6',

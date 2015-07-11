@@ -65,18 +65,29 @@ class UltraCacheNode(CacheNode):
             value = self.nodelist.render(context)
             cache.set(cache_key, value, expire_time)
 
-        # Cache the ultracache cache keys each object appears in
+        # Cache the ultracache cache keys and paths each object appears in
         to_set = {}
-        for ctid, obj_pk in context._ultracache[start_index:]:
-            key = 'ultracache-%s-%s' % (ctid, obj_pk)
+        to_set_paths = {}
+        for ctid, obj_pk, path in context._ultracache[start_index:]:
+            key = 'ucache-%s-%s' % (ctid, obj_pk)
             to_set.setdefault(key, cache.get(key, []))
             if cache_key not in to_set[key]:
                 to_set[key].append(cache_key)
+            key = 'ucache-pth-%s-%s' % (ctid, obj_pk)
+            to_set_paths.setdefault(key, [])
+            if path not in to_set_paths[key]:
+                to_set_paths[key].append(path)
         if to_set:
             try:
                 cache.set_many(to_set, 86400)
             except NotImplementedError:
                 for k, v in to_set.items():
+                    cache.set(k, v, 86400)
+        if to_set_paths:
+            try:
+                cache.set_many(to_set_paths, 86400)
+            except NotImplementedError:
+                for k, v in to_set_paths.items():
                     cache.set(k, v, 86400)
 
         return value
