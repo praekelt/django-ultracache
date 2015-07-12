@@ -22,7 +22,6 @@ class DummyProxy(dict):
 
     def purge(self, path):
         if path in self:
-            print "PURGE %s" % path
             del self[path]
 
 dummy_proxy = DummyProxy()
@@ -255,9 +254,8 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/ccc/'))
 
-        # Add a DummyOtherModel object
+        # Add a DummyOtherModel object five
         five = DummyOtherModel.objects.create(title='Five', code='five')
-        five.save()  # trigger post_save
         context = template.Context({
             'request' : self.request,
             'one': one,
@@ -265,7 +263,9 @@ class TemplateTagsTestCase(TestCase):
             'three': three,
             'counter': 5
         })
+        self.request._path = '/eee/'
         result = t.render(context)
+        dummy_proxy.cache('/eee/', result)
         # RenderView is only view aware of DummyOtherModel. That means
         # test_ultracache_invalidate_outer and
         # test_ultracache_invalidate_render_view are expired.
@@ -274,6 +274,28 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 4' in result)
+        self.failIf(dummy_proxy.is_cached('/ddd/'))
+
+        # Delete object two
+        two.delete()
+        context = template.Context({
+            'request' : self.request,
+            'one': one,
+            'two': None,
+            'three': three,
+            'counter': 6
+        })
+        self.request._path = '/fff/'
+        result = t.render(context)
+        dummy_proxy.cache('/fff/', result)
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('counter outer = 6' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 6' in result)
+        self.failUnless('counter three = 4' in result)
+        self.failIf(dummy_proxy.is_cached('/eee/'))
 
 
 class DecoratorTestCase(TestCase):

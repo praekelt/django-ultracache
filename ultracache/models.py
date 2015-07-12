@@ -1,5 +1,5 @@
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.db.models import Model
 from django.core.cache import cache
 from django.contrib.contenttypes.models import ContentType
@@ -34,8 +34,7 @@ def on_post_save(sender, **kwargs):
             ct = ContentType.objects.get_for_model(sender)
 
             if kwargs.get('created', False):
-                # Newly created objects expire cache keys that contain objects
-                # of the same content type.
+                # Expire cache keys that contain objects of this content type
                 key = 'ucache-ct-%s' % ct.id
                 to_delete = cache.get(key, [])
                 if to_delete:
@@ -44,6 +43,14 @@ def on_post_save(sender, **kwargs):
                     except NotImplementedError:
                         for k in to_delete:
                             cache.delete(k)
+
+                # Purge paths in reverse caching proxy that contain objects of
+                # this content type.
+                key = 'ucache-ct-pth-%s' % ct.id
+                if purger is not None:
+                    for path in cache.get(key, []):
+                        purger(path)
+                cache.delete(key)
 
             else:
                 # Expire cache keys
@@ -56,9 +63,37 @@ def on_post_save(sender, **kwargs):
                         for k in to_delete:
                             cache.delete(k)
 
-                # Invalidate paths in reverse caching proxy
+                # Purge paths in reverse caching proxy
                 key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
                 if purger is not None:
                     for path in cache.get(key, []):
                         purger(path)
                 cache.delete(key)
+
+
+@receiver(post_delete)
+def on_post_delete(sender, **kwargs):
+    """Expire ultracache cache keys affected by this object
+    """
+    if issubclass(sender, Model):
+        obj = kwargs['instance']
+        if isinstance(obj, Model):
+            # get_for_model itself is cached
+            ct = ContentType.objects.get_for_model(sender)
+
+            # Expire cache keys
+            key = 'ucache-%s-%s' % (ct.id, obj.pk)
+            to_delete = cache.get(key, [])
+            if to_delete:
+                try:
+                    cache.delete_many(to_delete)
+                except NotImplementedError:
+                    for k in to_delete:
+                        cache.delete(k)
+
+            # Invalidate paths in reverse caching proxy
+            key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
+            if purger is not None:
+                for path in cache.get(key, []):
+                    purger(path)
+            cache.delete(key)
