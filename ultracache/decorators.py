@@ -38,8 +38,6 @@ class cached_get(object):
             hashed = md5.new(':'.join([str(l) for l in li])).hexdigest()
             cache_key = 'ucache-get-%s' % hashed
             cached = cache.get(cache_key, None)
-
-            #import pdb;pdb.set_trace()
             if cached is None:
                 request._ultracache = []
                 response = f(cls, request, *args, **kwargs)

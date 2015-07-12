@@ -8,7 +8,8 @@ from django import template
 from django.core.cache import cache
 from django.conf import settings
 
-from ultracache.tests.models import DummyModel, DummyForeignModel
+from ultracache.tests.models import DummyModel, DummyForeignModel, \
+    DummyOtherModel
 
 
 class DummyProxy(dict):
@@ -131,8 +132,10 @@ class TemplateTagsTestCase(TestCase):
         one = DummyModel.objects.create(title='One', code='one')
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
+        four = DummyOtherModel.objects.create(title='Four', code='four')
         t = template.Template("""{% load ultracache_tags ultracache_test_tags %}
             {% ultracache 1200 'test_ultracache_invalidate_outer' %}
+                    counter outer = {{ counter }}
                 {% ultracache 1200 'test_ultracache_invalidate_one' %}
                     title = {{ one.title }}
                     counter one = {{ counter }}
@@ -168,6 +171,7 @@ class TemplateTagsTestCase(TestCase):
         dummy_proxy.cache('/aaa/', result)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('counter outer = 1' in result)
         self.failUnless('counter one = 1' in result)
         self.failUnless('counter two = 1' in result)
         self.failUnless('counter three = 1' in result)
@@ -191,6 +195,7 @@ class TemplateTagsTestCase(TestCase):
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('counter outer = 2' in result)
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 1' in result)
         self.failUnless('counter three = 2' in result)
@@ -215,6 +220,7 @@ class TemplateTagsTestCase(TestCase):
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
         self.failIf('title = Two' in result)
+        self.failUnless('counter outer = 3' in result)
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 2' in result)
@@ -241,12 +247,33 @@ class TemplateTagsTestCase(TestCase):
         self.failIf('title = Two' in result)
         self.failUnless('title = Threxe' in result)
         self.failIf('title = Three' in result)
+        self.failUnless('counter outer = 4' in result)
         self.failUnless('counter one = 2' in result)
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 4' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failIf(dummy_proxy.is_cached('/ccc/'))
+
+        # Add a DummyOtherModel object
+        five = DummyOtherModel.objects.create(title='Five', code='five')
+        five.save()  # trigger post_save
+        context = template.Context({
+            'request' : self.request,
+            'one': one,
+            'two': two,
+            'three': three,
+            'counter': 5
+        })
+        result = t.render(context)
+        # RenderView is only view aware of DummyOtherModel. That means
+        # test_ultracache_invalidate_outer and
+        # test_ultracache_invalidate_render_view are expired.
+        self.failUnless('render_view = Five' in result)
+        self.failUnless('counter outer = 5' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 4' in result)
 
 
 class DecoratorTestCase(TestCase):

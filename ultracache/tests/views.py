@@ -1,7 +1,8 @@
 from django.views.generic.base import TemplateView
 
 from ultracache.decorators import cached_get
-from ultracache.tests.models import DummyModel, DummyForeignModel
+from ultracache.tests.models import DummyModel, DummyForeignModel, \
+    DummyOtherModel
 
 
 class RenderView(TemplateView):
@@ -11,7 +12,15 @@ class RenderView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(RenderView, self).get_context_data(**kwargs)
-        context["obj"] = DummyModel.objects.get(code="one")
+        context["one"] = DummyModel.objects.get(code="one")
+        try:
+            context["four"] = DummyOtherModel.objects.get(code="four")
+        except DummyOtherModel.DoesNotExist:
+            pass
+        try:
+            context["five"] = DummyOtherModel.objects.get(code="five")
+        except DummyOtherModel.DoesNotExist:
+            pass
         return context
 
 

@@ -33,19 +33,32 @@ def on_post_save(sender, **kwargs):
             # get_for_model itself is cached
             ct = ContentType.objects.get_for_model(sender)
 
-            # Expire cache keys
-            key = 'ucache-%s-%s' % (ct.id, obj.pk)
-            to_delete = cache.get(key, [])
-            if to_delete:
-                try:
-                    cache.delete_many(to_delete)
-                except NotImplementedError:
-                    for k in to_delete:
-                        cache.delete(k)
+            if kwargs.get('created', False):
+                # Newly created objects expire cache keys that contain objects
+                # of the same content type.
+                key = 'ucache-ct-%s' % ct.id
+                to_delete = cache.get(key, [])
+                if to_delete:
+                    try:
+                        cache.delete_many(to_delete)
+                    except NotImplementedError:
+                        for k in to_delete:
+                            cache.delete(k)
 
-            # Invalidate paths in reverse caching proxy
-            key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
-            if purger is not None:
-                for path in cache.get(key, []):
-                    purger(path)
-            cache.delete(key)
+            else:
+                # Expire cache keys
+                key = 'ucache-%s-%s' % (ct.id, obj.pk)
+                to_delete = cache.get(key, [])
+                if to_delete:
+                    try:
+                        cache.delete_many(to_delete)
+                    except NotImplementedError:
+                        for k in to_delete:
+                            cache.delete(k)
+
+                # Invalidate paths in reverse caching proxy
+                key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
+                if purger is not None:
+                    for path in cache.get(key, []):
+                        purger(path)
+                cache.delete(key)
