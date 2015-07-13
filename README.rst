@@ -87,5 +87,5 @@ Tips
 #. If you arre running a cluster of Django nodes then ensure that they use a shared caching backend.
 
 #. Expose objects in your templates. Instead of passing ``object_title`` to a template rather have the
-template dereference ``object.title``.
+   template dereference ``object.title``.
 
