@@ -51,9 +51,10 @@ def _my_resolve_lookup(self, context):
                             # raised in the function itself.
                             current = settings.TEMPLATE_STRING_IF_INVALID  # invalid method call
                 elif isinstance(current, Model):
-                    # get_for_model itself is cached
-                    ct = ContentType.objects.get_for_model(current.__class__)
-                    context['request']._ultracache.append((ct.id, current.pk))
+                    if ('request' in context) and hasattr(context['request'], '_ultracache'):
+                        # get_for_model itself is cached
+                        ct = ContentType.objects.get_for_model(current.__class__)
+                        context['request']._ultracache.append((ct.id, current.pk))
 
         except Exception as e:
             if getattr(e, 'silent_variable_failure', False):
