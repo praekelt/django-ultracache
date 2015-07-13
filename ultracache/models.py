@@ -43,6 +43,7 @@ def on_post_save(sender, **kwargs):
                     except NotImplementedError:
                         for k in to_delete:
                             cache.delete(k)
+                cache.delete(key)
 
                 # Purge paths in reverse caching proxy that contain objects of
                 # this content type.
@@ -62,6 +63,7 @@ def on_post_save(sender, **kwargs):
                     except NotImplementedError:
                         for k in to_delete:
                             cache.delete(k)
+                cache.delete(key)
 
                 # Purge paths in reverse caching proxy
                 key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
@@ -90,6 +92,7 @@ def on_post_delete(sender, **kwargs):
                 except NotImplementedError:
                     for k in to_delete:
                         cache.delete(k)
+            cache.delete(key)
 
             # Invalidate paths in reverse caching proxy
             key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)

@@ -41,7 +41,9 @@ class UltraCacheNode(CacheNode):
                 '"cache" tag got a non-integer timeout value: %r' % expire_time
             )
 
-        # Set a list on the request
+        # Set a list on the request. Django's template rendering is recursive
+        # and single threaded so we can use a list to keep track of contained
+        # objects.
         request = context['request']
         if not hasattr(request, '_ultracache'):
             setattr(request, '_ultracache', [])
