@@ -55,7 +55,8 @@ cache key ``inner_two`` remains unaffected::
         {% endultracache %}
     {% endultracache %}
 
-``django-ultracache`` also provides a decorator ``cached_get`` to cache your views. ``request.get_full_path()`` is
+``django-ultracache`` also provides a decorator ``cached_get`` to cache your views. The parameters
+follow the same rules as the ``ultracache`` template tag except they must all resolve. ``request.get_full_path()`` is
 always implicitly added to the cache key::
 
     from ultracache.decorators import cached_get
@@ -64,7 +65,7 @@ always implicitly added to the cache key::
     class CachedView(TemplateView):
         template_name = "ultracache/cached_view.html"
 
-        @cached_get(300, "request.user.is_authenticated()", 456)
+        @cached_get(300, "request.is_secure()", 456)
         def get(self, *args, **kwargs):
             return super(CachedView, self).get(*args, **kwargs)
 

@@ -33,7 +33,7 @@ class RenderView(TemplateView):
 class CachedView(TemplateView):
     template_name = "ultracache/cached_view.html"
 
-    @cached_get(300, "request.user.is_authenticated()", 456)
+    @cached_get(300, "request.is_secure()", 456)
     def get(self, *args, **kwargs):
         return super(CachedView, self).get(*args, **kwargs)
 
