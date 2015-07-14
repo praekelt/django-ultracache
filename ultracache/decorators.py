@@ -39,6 +39,7 @@ class cached_get(object):
             cache_key = 'ucache-get-%s' % hashed
             cached = cache.get(cache_key, None)
             if cached is None:
+                # The get view as outermost caller may bluntly set _ultracache
                 request._ultracache = []
                 response = f(cls, request, *args, **kwargs)
                 if hasattr(response, 'rendered_content'):

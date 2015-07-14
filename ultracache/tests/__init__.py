@@ -10,6 +10,7 @@ from django.conf import settings
 
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
+from ultracache.tests import views
 
 
 class DummyProxy(dict):
@@ -132,6 +133,8 @@ class TemplateTagsTestCase(TestCase):
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
         four = DummyOtherModel.objects.create(title='Four', code='four')
+        # The counter is used to track the iteration that a cached block was
+        # last rendered.
         t = template.Template("""{% load ultracache_tags ultracache_test_tags %}
             {% ultracache 1200 'test_ultracache_invalidate_outer' %}
                     counter outer = {{ counter }}
@@ -320,18 +323,27 @@ class DecoratorTestCase(TestCase):
         one = DummyModel.objects.create(title='One', code='one')
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
+        four = DummyModel.objects.create(title='Four', code='four')
         url = reverse('cached-view')
 
         # Initial render
+        views.COUNTER = 1
         response = self.client.get(url)
         result = response.content
         self.assertEqual(response.status_code, 200)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('title = Three' in result)
         self.failUnless('render_view = One' in result)
         self.failUnless('include = One' in result)
+        self.failUnless('counter one = 1' in result)
+        self.failUnless('counter two = 1' in result)
+        self.failUnless('counter three = 1' in result)
+        self.failUnless('counter four = 1' in result)
+        self.failUnless('title = Four' in result)
 
         # Change object one
+        views.COUNTER = 2
         one.title = 'Onxe'
         one.save()
         response = self.client.get(url)
@@ -339,10 +351,17 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
+        self.failUnless('title = Three' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 1' in result)
+        self.failUnless('counter three = 2' in result)
+        self.failUnless('counter four = 2' in result)
+        self.failUnless('title = Four' in result)
 
         # Change object two
+        views.COUNTER = 3
         two.title = 'Twxo'
         two.save()
         response = self.client.get(url)
@@ -351,10 +370,17 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
         self.failIf('title = Two' in result)
+        self.failUnless('title = Three' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 2' in result)
+        self.failUnless('counter four = 3' in result)
+        self.failUnless('title = Four' in result)
 
         # Change object three
+        views.COUNTER = 4
         three.title = 'Threxe'
         three.save()
         response = self.client.get(url)
@@ -367,3 +393,29 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = Three' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 4' in result)
+        self.failUnless('counter four = 4' in result)
+        self.failUnless('title = Four' in result)
+
+        # Change object four
+        views.COUNTER = 5
+        four.title = 'Fouxr'
+        four.save()
+        response = self.client.get(url)
+        result = response.content
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('title = Threxe' in result)
+        self.failIf('title = Three' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 4' in result)
+        self.failUnless('counter four = 5' in result)
+        self.failUnless('render_view = Onxe' in result)
+        self.failUnless('include = Onxe' in result)
+        self.failUnless('title = Fouxr' in result)
+        self.failIf('title = Four' in result)

@@ -5,6 +5,12 @@ from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
 
 
+# The counter is used to track the iteration that a cached block was last
+# rendered. Global var is easiest way to influence the counter from a test.
+# Remember, adding querystring to request leads to a new cache key.
+COUNTER = 1
+
+
 class RenderView(TemplateView):
     """Simple view that renders a dummy model.
     """
@@ -32,9 +38,11 @@ class CachedView(TemplateView):
         return super(CachedView, self).get(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        global COUNTER
         context = super(CachedView, self).get_context_data(**kwargs)
         context["one"] = DummyModel.objects.get(code="one")
         context["two"] = DummyModel.objects.get(code="two")
         context["three"] = DummyForeignModel.objects.get(code="three")
-        context["counter"] = 1
+        context["four"] = DummyModel.objects.get(code="four")
+        context["counter"] = COUNTER
         return context

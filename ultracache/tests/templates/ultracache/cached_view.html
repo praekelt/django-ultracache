@@ -1,4 +1,5 @@
-bla
+title = {{ four.title }}
+counter four = {{ counter }}
 {% load ultracache_tags ultracache_test_tags %}
 {% ultracache 1200 'test_ultracache_invalidate_outer' %}
     {% ultracache 1200 'test_ultracache_invalidate_one' %}
