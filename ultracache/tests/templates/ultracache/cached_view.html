@@ -1,0 +1,24 @@
+title = {{ four.title }}
+counter four = {{ counter }}
+{% load ultracache_tags ultracache_test_tags %}
+{% ultracache 1200 'test_ultracache_invalidate_outer' %}
+    {% ultracache 1200 'test_ultracache_invalidate_one' %}
+        title = {{ one.title }}
+        counter one = {{ counter }}
+    {% endultracache %}
+    {% ultracache 1200 'test_ultracache_invalidate_two' %}
+        title = {{ two.title }}
+        counter two = {{ counter }}
+    {% endultracache %}
+    {% ultracache 1200 'test_ultracache_invalidate_three' %}
+        title = {{ three.title }}
+        {{ three.points_to.title }}
+        counter three = {{ counter }}
+    {% endultracache %}
+    {% ultracache 1200 'test_ultracache_invalidate_render_view' %}
+        {% render_view 'render-view' %}
+    {% endultracache %}
+    {% ultracache 1200 'test_ultracache_invalidate_include %}
+        {% include "ultracache/include_me.html" %}
+    {% endultracache %}
+{% endultracache %}
