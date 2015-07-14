@@ -75,6 +75,12 @@ You can create custom reverse caching proxy purgers. See ``purgers.py`` for exam
         'purge': {'method': 'myproduct.purgers.squid'}
     }
 
+Automatic invalidation defaults to true. To disable automatic invalidation set::
+
+    ULTRACACHE = {
+        'invalidate': False
+    }
+
 How does it work?
 -----------------
 

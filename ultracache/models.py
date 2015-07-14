@@ -23,10 +23,18 @@ except (AttributeError, KeyError):
     purger = None
 
 
+try:
+    invalidate = importer(settings.ULTRACACHE['invalidate'])
+except (AttributeError, KeyError):
+    invalidate = True
+
+
 @receiver(post_save)
 def on_post_save(sender, **kwargs):
     """Expire ultracache cache keys affected by this object
     """
+    if not invalidate:
+        return
     if issubclass(sender, Model):
         obj = kwargs['instance']
         if isinstance(obj, Model):
@@ -77,6 +85,8 @@ def on_post_save(sender, **kwargs):
 def on_post_delete(sender, **kwargs):
     """Expire ultracache cache keys affected by this object
     """
+    if not invalidate:
+        return
     if issubclass(sender, Model):
         obj = kwargs['instance']
         if isinstance(obj, Model):
