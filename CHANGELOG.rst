@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Fix HTTPResponse caching bug.
+
 0.1.1
 -----
 #. Handle case where a view returns an HTTPResponse object.
