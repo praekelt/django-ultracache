@@ -42,7 +42,9 @@ class cached_get(object):
                 # The get view as outermost caller may bluntly set _ultracache
                 request._ultracache = []
                 response = f(cls, request, *args, **kwargs)
-                if hasattr(response, 'rendered_content'):
+                content = getattr( response, 'rendered_content', None) \
+                    or getattr(response, 'content', None)
+                if content is not None:
                     cache.set(cache_key, response.rendered_content, self.timeout)
                     cache_meta(request, cache_key)
             else:
