@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.1.2
+-----
 #. Fix HTTPResponse caching bug.
 
 0.1.1
