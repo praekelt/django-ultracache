@@ -45,7 +45,7 @@ class cached_get(object):
                 content = getattr( response, 'rendered_content', None) \
                     or getattr(response, 'content', None)
                 if content is not None:
-                    cache.set(cache_key, response.rendered_content, self.timeout)
+                    cache.set(cache_key, content, self.timeout)
                     cache_meta(request, cache_key)
             else:
                 response = HttpResponse(cached)
