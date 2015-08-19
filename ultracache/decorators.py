@@ -18,6 +18,15 @@ class cached_get(object):
 
         def wrapped_f(cls, request, *args, **kwargs):
 
+            # If request contains messages never cache
+            l = 0
+            try:
+                l = len(request._messages)
+            except (AttributeError, TypeError):
+                pass
+            if l:
+                return f(cls, request, *args, **kwargs)
+
             # Compute a cache key
             li = [request.get_full_path()]
             if 'django.contrib.sites' in settings.INSTALLED_APPS:

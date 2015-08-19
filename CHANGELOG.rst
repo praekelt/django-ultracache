@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. `cached_get` decorator now does not cache if request contains messages.
+
 0.1.2
 -----
 #. Fix HTTPResponse caching bug.
