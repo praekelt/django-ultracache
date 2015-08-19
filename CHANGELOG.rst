@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.1.3
+-----
 #. `cached_get` decorator now does not cache if request contains messages.
 
 0.1.2
