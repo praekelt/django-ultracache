@@ -1,22 +1,25 @@
 import md5
 import types
+from functools import wraps
 
 from django.http import HttpResponse
 from django.core.cache import cache
+from django.utils.decorators import available_attrs
 from django.conf import settings
 
 from ultracache.utils import cache_meta
 
 
-class cached_get(object):
+def cached_get(timeout, *params):
 
-    def __init__(self, timeout, *args):
-        self.timeout=  timeout
-        self.args = args
+    def decorator(view_func):
+        @wraps(view_func, assigned=available_attrs(view_func))
+        def _wrapped_view(view_or_request, *args, **kwargs):
 
-    def __call__(self, f):
-
-        def wrapped_f(cls, request, *args, **kwargs):
+            # The type of the request gets muddled when using a function based
+            # decorator. We must use a function based decorator so it can be
+            # used in urls.py.
+            request = getattr(view_or_request, 'request', view_or_request)
 
             # If request contains messages never cache
             l = 0
@@ -25,7 +28,7 @@ class cached_get(object):
             except (AttributeError, TypeError):
                 pass
             if l:
-                return f(cls, request, *args, **kwargs)
+                return view_func(view_or_request, *args, **kwargs)
 
             # Compute a cache key
             li = [request.get_full_path()]
@@ -39,10 +42,10 @@ class cached_get(object):
                 li.append('%s,%s' % (key, kwargs[key]))
 
             # Extend cache key with custom variables
-            for arg in self.args:
-                if not isinstance(arg, types.StringType):
-                    arg = str(arg)
-                li.append(eval(arg))
+            for param in params:
+                if not isinstance(param, types.StringType):
+                    param = str(param)
+                li.append(eval(param))
 
             hashed = md5.new(':'.join([str(l) for l in li])).hexdigest()
             cache_key = 'ucache-get-%s' % hashed
@@ -50,15 +53,16 @@ class cached_get(object):
             if cached is None:
                 # The get view as outermost caller may bluntly set _ultracache
                 request._ultracache = []
-                response = f(cls, request, *args, **kwargs)
-                content = getattr( response, 'rendered_content', None) \
+                response = view_func(view_or_request, *args, **kwargs)
+                content = getattr(response, 'rendered_content', None) \
                     or getattr(response, 'content', None)
                 if content is not None:
-                    cache.set(cache_key, content, self.timeout)
+                    cache.set(cache_key, content, timeout)
                     cache_meta(request, cache_key)
             else:
                 response = HttpResponse(cached)
 
             return response
 
-        return wrapped_f
+        return _wrapped_view
+    return decorator
