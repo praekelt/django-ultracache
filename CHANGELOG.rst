@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.1.5
+-----
+#. Explicitly check for GET and HEAD request method and cache only those requests.
+
 0.1.4
 -----
 #. Rewrite decorator to be function based instead of class based so it is easier to use in urls.py.
