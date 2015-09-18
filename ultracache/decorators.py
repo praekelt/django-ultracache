@@ -21,6 +21,10 @@ def cached_get(timeout, *params):
             # used in urls.py.
             request = getattr(view_or_request, 'request', view_or_request)
 
+            # If request not GET or HEAD never cache
+            if request.method.lower() not in ('get', 'head'):
+                return view_func(view_or_request, *args, **kwargs)
+
             # If request contains messages never cache
             l = 0
             try:
