@@ -419,3 +419,18 @@ class DecoratorTestCase(TestCase):
         self.failUnless('include = Onxe' in result)
         self.failUnless('title = Fouxr' in result)
         self.failIf('title = Four' in result)
+
+    def test_decorator_header(self):
+        """Test that decorator preserves headers
+        """
+        url = reverse('cached-header-view')
+
+        # Initial render
+        response = self.client.get(url)
+        self.assertEqual(response._headers['content-type'], ('Content-Type', 'application/json'))
+        self.assertEqual(response._headers['foo'], ('foo', 'bar'))
+
+        # Second pass is cached
+        response = self.client.get(url)
+        self.assertEqual(response._headers['content-type'], ('Content-Type', 'application/json'))
+        self.assertEqual(response._headers['foo'], ('foo', 'bar'))

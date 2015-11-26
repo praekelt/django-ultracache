@@ -69,6 +69,22 @@ always implicitly added to the cache key::
         def get(self, *args, **kwargs):
             return super(CachedView, self).get(*args, **kwargs)
 
+The ``cached_get`` decorator can be used in an URL pattern::
+
+    from ultracache.decorators import cached_get
+
+    url(
+        r"^cached-view/$",
+        cached_get(3600)(TemplateView.as_view(
+            template_name="myproduct/template.html"
+        )),
+        name="cached-view"
+    )
+
+Do not indiscriminately use the ``cached_get`` decorator. It only ever operates on GET requests
+but cannot know if the code being wrapped retrieves data from eg. the session. In such a case
+it will cache things it is not supposed to cache.
+
 You can create custom reverse caching proxy purgers. See ``purgers.py`` for examples::
 
     ULTRACACHE = {
