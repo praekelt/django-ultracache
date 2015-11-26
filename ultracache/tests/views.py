@@ -46,3 +46,14 @@ class CachedView(TemplateView):
         context["four"] = DummyModel.objects.get(code="four")
         context["counter"] = COUNTER
         return context
+
+
+class CachedHeaderView(TemplateView):
+    template_name = "ultracache/cached_header_view.html"
+    content_type = "application/json"
+
+    @cached_get(300)
+    def get(self, *args, **kwargs):
+        response = super(CachedHeaderView, self).get(*args, **kwargs)
+        response["foo"] = "bar"
+        return response

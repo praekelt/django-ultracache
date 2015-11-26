@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Also cache response headers.
+
 0.1.5
 -----
 #. Explicitly check for GET and HEAD request method and cache only those requests.

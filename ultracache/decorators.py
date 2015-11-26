@@ -61,10 +61,18 @@ def cached_get(timeout, *params):
                 content = getattr(response, 'rendered_content', None) \
                     or getattr(response, 'content', None)
                 if content is not None:
-                    cache.set(cache_key, content, timeout)
+                    headers = getattr(response, '_headers', {})
+                    cache.set(
+                        cache_key,
+                        {'content': content, 'headers': headers},
+                        timeout
+                    )
                     cache_meta(request, cache_key)
             else:
-                response = HttpResponse(cached)
+                response = HttpResponse(cached['content'])
+                # Headers has a non-obvious format
+                for k, v in cached['headers'].items():
+                    response[v[0]] = v[1]
 
             return response
 

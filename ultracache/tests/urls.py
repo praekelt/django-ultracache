@@ -14,5 +14,10 @@ urlpatterns = patterns(
         r'^cached-view/$',
         views.CachedView.as_view(),
         name='cached-view'
+    ),
+    url(
+        r'^cached-header-view/$',
+        views.CachedHeaderView.as_view(),
+        name='cached-header-view'
     )
 )
