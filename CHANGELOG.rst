@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.1.6
+-----
 #. Also cache response headers.
 
 0.1.5
