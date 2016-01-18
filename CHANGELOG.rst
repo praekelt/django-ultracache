@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.2
+---
 #. Do not automatically add `request.get_full_path()` if any of `request.get_full_path()`, `request.path` or `request.path_info` is an argument for `cached_get`.
 
 0.1.6
