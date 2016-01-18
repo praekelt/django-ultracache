@@ -35,7 +35,17 @@ def cached_get(timeout, *params):
                 return view_func(view_or_request, *args, **kwargs)
 
             # Compute a cache key
-            li = [request.get_full_path()]
+            li = []
+
+            # request.get_full_path is implicitly added it no other request
+            # path is provided. get_full_path includes the querystring and is
+            # the more conservative approach but makes it trivially easy for a
+            # request to bust through the cache.
+            if not set(params).intersection(set((
+                "request.get_full_path()", "request.path", "request.path_info"
+            ))):
+                li = [request.get_full_path()]
+
             if 'django.contrib.sites' in settings.INSTALLED_APPS:
                 li.append(settings.SITE_ID)
 

@@ -434,3 +434,19 @@ class DecoratorTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response._headers['content-type'], ('Content-Type', 'application/json'))
         self.assertEqual(response._headers['foo'], ('foo', 'bar'))
+
+    def test_decorator_cache_busting(self):
+        """Test cache busting with and without random querystring param
+        """
+        url = reverse('bustable-cached-view')
+        response = self.client.get(url + '?aaa=1')
+        self.failUnless('aaa=1' in response.content)
+        response = self.client.get(url + '?aaa=2')
+        self.failUnless('aaa=2' in response.content)
+
+        url = reverse('non-bustable-cached-view')
+        response = self.client.get(url + '?aaa=1')
+        self.failUnless('aaa=1' in response.content)
+        response = self.client.get(url + '?aaa=2')
+        self.failIf('aaa=2' in response.content)
+
