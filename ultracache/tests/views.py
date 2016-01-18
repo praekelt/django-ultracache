@@ -57,3 +57,19 @@ class CachedHeaderView(TemplateView):
         response = super(CachedHeaderView, self).get(*args, **kwargs)
         response["foo"] = "bar"
         return response
+
+
+class BustableCachedView(TemplateView):
+    template_name = "ultracache/bustable_cached_view.html"
+
+    @cached_get(300)
+    def get(self, *args, **kwargs):
+        return super(BustableCachedView, self).get(*args, **kwargs)
+
+
+class NonBustableCachedView(TemplateView):
+    template_name = "ultracache/non_bustable_cached_view.html"
+
+    @cached_get(300, "request.path_info")
+    def get(self, *args, **kwargs):
+        return super(NonBustableCachedView, self).get(*args, **kwargs)
