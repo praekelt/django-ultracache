@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.1
+-----
+#. Trivial release to work around Pypi errors of the day.
+
 0.3
 ---
 #. Replace `cache.get` in for loop with `cache.get_many`.
