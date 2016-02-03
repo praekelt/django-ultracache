@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3
+---
+#. Replace `cache.get` in for loop with `cache.get_many`.
+
 0.2
 ---
 #. Do not automatically add `request.get_full_path()` if any of `request.get_full_path()`, `request.path` or `request.path_info` is an argument for `cached_get`.
