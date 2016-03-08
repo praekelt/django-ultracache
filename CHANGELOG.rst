@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.2
+-----
 #. The `ultracache` template tag now only caches HEAD and GET requests.
 
 0.3.1
