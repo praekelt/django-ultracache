@@ -41,10 +41,15 @@ class UltraCacheNode(CacheNode):
                 '"cache" tag got a non-integer timeout value: %r' % expire_time
             )
 
+        request = context['request']
+
+        # If request not GET or HEAD never cache
+        if request.method.lower() not in ('get', 'head'):
+            return self.nodelist.render(context)
+
         # Set a list on the request. Django's template rendering is recursive
         # and single threaded so we can use a list to keep track of contained
         # objects.
-        request = context['request']
         if not hasattr(request, '_ultracache'):
             setattr(request, '_ultracache', [])
             start_index = 0
