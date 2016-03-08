@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. The `ultracache` template tag now only caches HEAD and GET requests.
+
 0.3.1
 -----
 #. Trivial release to work around Pypi errors of the day.
