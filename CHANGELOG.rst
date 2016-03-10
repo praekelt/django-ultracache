@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Handle case where one cached view renders another cached view inside it, thus potentially sharing the same cache key.
+
 0.3.2
 -----
 #. The `ultracache` template tag now only caches HEAD and GET requests.
