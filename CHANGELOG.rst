@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.3.4
+-----
+#. Prevent redundant sets.
+#. Work around an apparent Python bug related to `di[k].append(v)` vs `di[k] = di[k] + [v]`. The latter is safe.
+
 0.3.3
 -----
 #. Handle case where one cached view renders another cached view inside it, thus potentially sharing the same cache key.
