@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.4
+-----
 #. Prevent redundant sets.
 #. Work around an apparent Python bug related to `di[k].append(v)` vs `di[k] = di[k] + [v]`. The latter is safe.
 
