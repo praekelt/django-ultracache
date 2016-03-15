@@ -3,7 +3,7 @@ from django.core.cache import cache
 
 def cache_meta(request, cache_key, start_index=0):
     """Inspect request for objects in _ultracache and set appropriate entries
-    in Django's cache.  """
+    in Django's cache."""
 
     path = request.get_full_path()
 
@@ -23,18 +23,27 @@ def cache_meta(request, cache_key, start_index=0):
     to_set_objects = []
 
     for ctid, obj_pk in request._ultracache[start_index:]:
+        # The object appears in these cache entries. If the object is modified
+        # then these cache entries are deleted.
         key = 'ucache-%s-%s' % (ctid, obj_pk)
         if key not in to_set_get_keys:
             to_set_get_keys.append(key)
 
+        # The object appears in these paths. If the object is modified then any
+        # caches that are read from when browsing to this path are cleared.
         key = 'ucache-pth-%s-%s' % (ctid, obj_pk)
         if key not in to_set_paths_get_keys:
             to_set_paths_get_keys.append(key)
 
+        # The content type appears in these cache entries. If an object of this
+        # content type is created then these cache entries are cleared.
         key = 'ucache-ct-%s' % ctid
         if key not in to_set_content_types_get_keys:
             to_set_content_types_get_keys.append(key)
 
+        # The content type appears in these paths. If an object of this content
+        # type is created then any caches that are read from when browsing to
+        # this path are cleared.
         key = 'ucache-ct-pth-%s' % ctid
         if key not in to_set_content_types_paths_get_keys:
             to_set_content_types_paths_get_keys.append(key)
