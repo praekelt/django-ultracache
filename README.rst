@@ -97,6 +97,17 @@ Automatic invalidation defaults to true. To disable automatic invalidation set::
         'invalidate': False
     }
 
+``django-ultracache`` maintains a registry in Django's caching backend (see `How does it work`). This registry
+can't be allowed to grow unchecked, thus a limit is imposed on the registry size. It would be inefficient to
+impose a size limit on the entire registry so a maximum size is set per cached value. It defaults to 25000 bytes::
+
+    ULTRACACHE = {
+        'max-registry-value-size': 10000
+    }
+
+It is highly recommended to use a backend that supports compression because a larger size improves cache coherency.
+
+
 How does it work?
 -----------------
 

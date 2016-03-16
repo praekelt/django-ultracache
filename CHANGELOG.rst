@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.5
+-----
+#. Keep the metadata cache size in check to prevent possibly infinite growth.
+
 0.3.4
 -----
 #. Prevent redundant sets.
