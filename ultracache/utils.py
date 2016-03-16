@@ -1,4 +1,34 @@
+import sys
+
 from django.core.cache import cache
+from django.conf import settings
+
+
+# The metadata itself can't be allowed to grow endlessly. This value is the
+# maximum size in bytes of a metadata list. If your caching backend support
+# compression set a larger value.
+try:
+    MAX_SIZE = settings.ULTRACACHE['max-registry-value-size']
+except (AttributeError, KeyError):
+    MAX_SIZE = 25000
+
+
+def reduce_list_size(li):
+    """Return two lists
+        - the last N items of li whose total size is less than MAX_SIZE
+        - the rest of the original list li
+    """
+    size = sys.getsizeof(li)
+    keep = li
+    toss = []
+    n = len(li)
+    decrement_by = max(n / 10, 10)
+    while (size >= MAX_SIZE) and (n > 0):
+        n -= decrement_by
+        toss = li[:-n]
+        keep = li[-n:]
+        size = sys.getsizeof(keep)
+    return keep, toss
 
 
 def cache_meta(request, cache_key, start_index=0):
@@ -13,13 +43,13 @@ def cache_meta(request, cache_key, start_index=0):
     to_set_content_types_get_keys = []
     to_set_content_types_paths_get_keys = []
 
-
     # Dictionaries needed for cache.set_many
     to_set = {}
     to_set_paths = {}
     to_set_content_types = {}
     to_set_content_types_paths = {}
 
+    to_delete = []
     to_set_objects = []
 
     for ctid, obj_pk in request._ultracache[start_index:]:
@@ -48,6 +78,7 @@ def cache_meta(request, cache_key, start_index=0):
         if key not in to_set_content_types_paths_get_keys:
             to_set_content_types_paths_get_keys.append(key)
 
+        # A list of objects that contribute to a cache entry
         tu = (ctid, obj_pk)
         if tu not in to_set_objects:
             to_set_objects.append(tu)
@@ -56,7 +87,9 @@ def cache_meta(request, cache_key, start_index=0):
     di = cache.get_many(to_set_get_keys)
     for key in to_set_get_keys:
         if key not in to_set:
-            to_set[key] = di.get(key, [])
+            keep, toss = reduce_list_size(di.get(key, []))
+            to_delete.extend(toss)
+            to_set[key] = keep
         if cache_key not in to_set[key]:
             to_set[key] = to_set[key] + [cache_key]
     if to_set == di:
@@ -65,7 +98,8 @@ def cache_meta(request, cache_key, start_index=0):
     di = cache.get_many(to_set_paths_get_keys)
     for key in to_set_paths_get_keys:
         if key not in to_set_paths:
-            to_set_paths[key] = di.get(key, [])
+            keep, toss = reduce_list_size(di.get(key, []))
+            to_set_paths[key] = keep
         if path not in to_set_paths[key]:
             to_set_paths[key] = to_set_paths[key] + [path]
     if to_set_paths == di:
@@ -74,9 +108,10 @@ def cache_meta(request, cache_key, start_index=0):
     di = cache.get_many(to_set_content_types_get_keys)
     for key in to_set_content_types_get_keys:
         if key not in to_set_content_types:
-            to_set_content_types[key] = di.get(key, [])
-        ctid = key.split('-')[-1]
-        if ctid not in to_set_content_types[key]:
+            keep, toss = reduce_list_size(di.get(key, []))
+            to_delete.extend(toss)
+            to_set_content_types[key] = keep
+        if cache_key not in to_set_content_types[key]:
             to_set_content_types[key] = to_set_content_types[key] + [cache_key]
     if to_set_content_types == di:
         to_set_content_types = {}
@@ -84,11 +119,20 @@ def cache_meta(request, cache_key, start_index=0):
     di = cache.get_many(to_set_content_types_paths_get_keys)
     for key in to_set_content_types_paths_get_keys:
         if key not in to_set_content_types_paths:
-            to_set_content_types_paths[key] = di.get(key, [])
+            keep, toss = reduce_list_size(di.get(key, []))
+            to_set_content_types_paths[key] = keep
         if path not in to_set_content_types_paths[key]:
             to_set_content_types_paths[key] = to_set_content_types_paths[key] + [path]
     if to_set_content_types_paths == di:
         to_set_content_types_paths = {}
+
+    # Deletion must happen first because set may set some of these keys
+    if to_delete:
+        try:
+            cache.delete_many(to_delete)
+        except NotImplementedError:
+            for k in to_delete:
+                cache.delete(k)
 
     if to_set:
         try:
