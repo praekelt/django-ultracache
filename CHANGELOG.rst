@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.6
+-----
 #. Add template name (if possible) to the caching key.
 #. Reduce number of calls to set_many.
 
