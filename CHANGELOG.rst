@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+#. Add template name (if possible) to the caching key.
+#. Reduce number of calls to set_many.
+
 0.3.5
 -----
 #. Keep the metadata cache size in check to prevent possibly infinite growth.

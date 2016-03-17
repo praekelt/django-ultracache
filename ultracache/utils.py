@@ -134,33 +134,23 @@ def cache_meta(request, cache_key, start_index=0):
             for k in to_delete:
                 cache.delete(k)
 
-    if to_set:
-        try:
-            cache.set_many(to_set, 86400)
-        except NotImplementedError:
-            for k, v in to_set.items():
-                cache.set(k, v, 86400)
-
-    if to_set_paths:
-        try:
-            cache.set_many(to_set_paths, 86400)
-        except NotImplementedError:
-            for k, v in to_set_paths.items():
-                cache.set(k, v, 86400)
-
-    if to_set_content_types:
-        try:
-            cache.set_many(to_set_content_types, 86400)
-        except NotImplementedError:
-            for k, v in to_set_content_types.items():
-                cache.set(k, v, 86400)
-
-    if to_set_content_types_paths:
-        try:
-            cache.set_many(to_set_content_types_paths, 86400)
-        except NotImplementedError:
-            for k, v in to_set_content_types_paths.items():
-                cache.set(k, v, 86400)
+    # Do one set_many
+    di = {}
+    di.update(to_set)
+    del to_set
+    di.update(to_set_paths)
+    del to_set_paths
+    di.update(to_set_content_types)
+    del to_set_content_types
+    di.update(to_set_content_types_paths)
+    del to_set_content_types_paths
 
     if to_set_objects:
-        cache.set(cache_key + '-objs', to_set_objects, 86400)
+        di[cache_key + '-objs'] = to_set_objects
+
+    if di:
+        try:
+            cache.set_many(di, 86400)
+        except NotImplementedError:
+            for k, v in di.items():
+                cache.set(k, v, 86400)
