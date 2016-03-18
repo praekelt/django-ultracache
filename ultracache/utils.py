@@ -5,7 +5,7 @@ from django.conf import settings
 
 
 # The metadata itself can't be allowed to grow endlessly. This value is the
-# maximum size in bytes of a metadata list. If your caching backend support
+# maximum size in bytes of a metadata list. If your caching backend supports
 # compression set a larger value.
 try:
     MAX_SIZE = settings.ULTRACACHE['max-registry-value-size']
@@ -86,42 +86,62 @@ def cache_meta(request, cache_key, start_index=0):
     # todo: rewrite to handle absence of get_many
     di = cache.get_many(to_set_get_keys)
     for key in to_set_get_keys:
-        if key not in to_set:
-            keep, toss = reduce_list_size(di.get(key, []))
-            to_delete.extend(toss)
-            to_set[key] = keep
-        if cache_key not in to_set[key]:
+        v = di.get(key, None)
+        keep = []
+        if v is not None:
+            keep, toss = reduce_list_size(v)
+            if toss:
+                to_set[key] = keep
+                to_delete.extend(toss)
+        if cache_key not in keep:
+            if key not in to_set:
+                to_set[key] = keep
             to_set[key] = to_set[key] + [cache_key]
     if to_set == di:
         to_set = {}
 
     di = cache.get_many(to_set_paths_get_keys)
     for key in to_set_paths_get_keys:
-        if key not in to_set_paths:
-            keep, toss = reduce_list_size(di.get(key, []))
-            to_set_paths[key] = keep
-        if path not in to_set_paths[key]:
+        v = di.get(key, None)
+        keep = []
+        if v is not None:
+            keep, toss = reduce_list_size(v)
+            if toss:
+                to_set_paths[key] = keep
+        if path not in keep:
+            if key not in to_set_paths:
+                to_set_paths[key] = keep
             to_set_paths[key] = to_set_paths[key] + [path]
     if to_set_paths == di:
         to_set_paths = {}
 
     di = cache.get_many(to_set_content_types_get_keys)
     for key in to_set_content_types_get_keys:
-        if key not in to_set_content_types:
-            keep, toss = reduce_list_size(di.get(key, []))
-            to_delete.extend(toss)
-            to_set_content_types[key] = keep
-        if cache_key not in to_set_content_types[key]:
+        v = di.get(key, None)
+        keep = []
+        if v is not None:
+            keep, toss = reduce_list_size(v)
+            if toss:
+                to_set_content_types[key] = keep
+                to_delete.extend(toss)
+        if cache_key not in keep:
+            if key not in to_set_content_types:
+                to_set_content_types[key] = keep
             to_set_content_types[key] = to_set_content_types[key] + [cache_key]
     if to_set_content_types == di:
         to_set_content_types = {}
 
     di = cache.get_many(to_set_content_types_paths_get_keys)
     for key in to_set_content_types_paths_get_keys:
-        if key not in to_set_content_types_paths:
-            keep, toss = reduce_list_size(di.get(key, []))
-            to_set_content_types_paths[key] = keep
-        if path not in to_set_content_types_paths[key]:
+        v = di.get(key, None)
+        keep = []
+        if v is not None:
+            keep, toss = reduce_list_size(v)
+            if toss:
+                to_set_content_types_paths[key] = keep
+        if path not in keep:
+            if key not in to_set_content_types_paths:
+                to_set_content_types_paths[key] = keep
             to_set_content_types_paths[key] = to_set_content_types_paths[key] + [path]
     if to_set_content_types_paths == di:
         to_set_content_types_paths = {}
