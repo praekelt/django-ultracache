@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.7
+-----
 #. Revert the adding of the template name. It introduces a performance penalty in a WSGI environment.
 #. Further reduce the number of writes to the cache.
 
