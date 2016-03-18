@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+#. Revert the adding of the template name. It introduces a performance penalty in a WSGI environment.
+#. Further reduce the number of writes to the cache.
+
 0.3.6
 -----
 #. Add template name (if possible) to the caching key.

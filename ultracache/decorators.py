@@ -5,6 +5,7 @@ from functools import wraps
 from django.http import HttpResponse
 from django.core.cache import cache
 from django.utils.decorators import available_attrs
+from django.views.generic.base import TemplateResponseMixin
 from django.conf import settings
 
 from ultracache.utils import cache_meta
@@ -45,12 +46,6 @@ def cached_get(timeout, *params):
                 "request.get_full_path()", "request.path", "request.path_info"
             ))):
                 li.append(request.get_full_path())
-
-            # If a view then add the template name. This is useful when a view
-            # renders another view programatically. In such a case the request
-            # path will be the same, so we need another mechanism to
-            # distinguish them.
-            li.extend(getattr(view_or_request, "get_template_names", lambda:[])())
 
             if 'django.contrib.sites' in settings.INSTALLED_APPS:
                 li.append(settings.SITE_ID)

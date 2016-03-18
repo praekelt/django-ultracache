@@ -85,6 +85,10 @@ Do not indiscriminately use the ``cached_get`` decorator. It only ever operates 
 but cannot know if the code being wrapped retrieves data from eg. the session. In such a case
 it will cache things it is not supposed to cache.
 
+If your view is used by more than one URL pattern then it is highly recommended to
+apply the ``cached_get`` decorator in the URL pattern. Applying it at class level
+may lead to cache collisions, especially if ``get_template_names`` is overridden.
+
 You can create custom reverse caching proxy purgers. See ``purgers.py`` for examples::
 
     ULTRACACHE = {
