@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Honor the `raw` parameter send along by loaddata. It prevents redundant post_save handling.
+
 0.3.7
 -----
 #. Revert the adding of the template name. It introduces a performance penalty in a WSGI environment.
