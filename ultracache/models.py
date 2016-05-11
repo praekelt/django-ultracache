@@ -35,6 +35,8 @@ def on_post_save(sender, **kwargs):
     """
     if not invalidate:
         return
+    if kwargs.get('raw', False):
+        return
     if issubclass(sender, Model):
         obj = kwargs['instance']
         if isinstance(obj, Model):
