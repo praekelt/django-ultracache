@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.8
+-----
 #. Honor the `raw` parameter send along by loaddata. It prevents redundant post_save handling.
 
 0.3.7
