@@ -13,13 +13,9 @@ setup(
     dependency_links = [
     ],
     install_requires = [
-        'django>=1.4,<1.8',
+        'django',
         'requests',
     ],
-    tests_require=[
-        'django-setuptest>=0.1.6',
-    ],
-    test_suite="setuptest.setuptest.SetupTestSuite",
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",

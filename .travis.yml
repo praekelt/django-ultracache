@@ -1,12 +1,10 @@
 language: python
 
-python:
-  - "2.7"
-
 env:
-  - DJANGO=Django==1.4.21
-  - DJANGO=Django==1.5.12
-  - DJANGO=Django==1.6.11
-  - DJANGO=Django==1.7.9
+  - TOXENV=django16
+  - TOXENV=django19
 
-script: python setup.py test
+install:
+  - pip install tox
+
+script: tox
