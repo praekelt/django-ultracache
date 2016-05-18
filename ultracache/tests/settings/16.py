@@ -14,6 +14,8 @@ ROOT_URLCONF = 'ultracache.tests.urls'
 
 INSTALLED_APPS = (
     'ultracache',
+    # Include tests because it declares models
+    'ultracache.tests',
     'django.contrib.contenttypes',
     'django.contrib.sites',
 )
@@ -26,6 +28,8 @@ CACHES = {
 
 SITE_ID = 1
 
+SECRET_KEY = 'SECRET_KEY'
+
 TEMPLATE_DIRS = (os.path.realpath(os.path.dirname(__file__)) + '/ultracache/tests/templates/',)
 
 TEMPLATE_CONTEXT_PROCESSORS = (
@@ -33,5 +37,5 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 ULTRACACHE = {
-    'purge': {'method': 'ultracache.tests.dummy_purger'}
+    'purge': {'method': 'ultracache.tests.utils.dummy_purger'}
 }

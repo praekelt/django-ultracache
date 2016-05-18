@@ -10,9 +10,13 @@ except ImportError:
 from django.conf import settings
 
 if 'django.core.context_processors.request' not in \
+    settings.TEMPLATE_CONTEXT_PROCESSORS \
+    and 'django.template.context_processors.request' not in \
     settings.TEMPLATE_CONTEXT_PROCESSORS:
-    raise RuntimeError('django.core.context_processors.request is required \
-        in TEMPLATE_CONTEXT_PROCESSORS')
+    raise RuntimeError(
+        'django.core.context_processors.request is required in '
+        + 'TEMPLATE_CONTEXT_PROCESSORS'
+    )
 
 import ultracache.monkey
 
