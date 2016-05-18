@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.9.0
+-----
 #. Move to tox for tests.
 #. Django 1.9 compatibility.
 
