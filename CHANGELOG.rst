@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. `Invalidate` setting was not being loaded properly. Fixed.
+
 1.9.0
 -----
 #. Move to tox for tests.
