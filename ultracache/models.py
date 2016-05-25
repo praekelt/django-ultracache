@@ -28,7 +28,7 @@ except (AttributeError, KeyError):
 
 
 try:
-    invalidate = importer(settings.ULTRACACHE['invalidate'])
+    invalidate = settings.ULTRACACHE['invalidate']
 except (AttributeError, KeyError):
     invalidate = True
 

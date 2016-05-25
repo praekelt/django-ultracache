@@ -4,6 +4,7 @@ Changelog
 next
 ----
 #. Add missing import only surfacing in certain code paths.
+#. `Invalidate` setting was not being loaded properly. Fixed.
 
 1.9.0
 -----
