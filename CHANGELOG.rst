@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Add missing import only surfacing in certain code paths.
+
 1.9.0
 -----
 #. Move to tox for tests.
