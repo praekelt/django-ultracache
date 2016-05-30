@@ -5,6 +5,7 @@ next
 ----
 #. Add missing import only surfacing in certain code paths.
 #. `Invalidate` setting was not being loaded properly. Fixed.
+#. Handle content types RuntimeError when content types have not been migrated yet.
 
 1.9.0
 -----

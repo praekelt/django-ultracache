@@ -45,7 +45,12 @@ def on_post_save(sender, **kwargs):
         obj = kwargs['instance']
         if isinstance(obj, Model):
             # get_for_model itself is cached
-            ct = ContentType.objects.get_for_model(sender)
+            try:
+                ct = ContentType.objects.get_for_model(sender)
+            except RuntimeError:
+                # This happens when ultracache is being used by another product
+                # during a test run.
+                return
 
             if kwargs.get('created', False):
                 # Expire cache keys that contain objects of this content type
@@ -97,7 +102,12 @@ def on_post_delete(sender, **kwargs):
         obj = kwargs['instance']
         if isinstance(obj, Model):
             # get_for_model itself is cached
-            ct = ContentType.objects.get_for_model(sender)
+            try:
+                ct = ContentType.objects.get_for_model(sender)
+            except RuntimeError:
+                # This happens when ultracache is being used by another product
+                # during a test run.
+                return
 
             # Expire cache keys
             key = 'ucache-%s-%s' % (ct.id, obj.pk)
