@@ -2,6 +2,8 @@
 are covered within a containing caching template tag. The patch is based on
 Django 1.9 but is backwards compatible with 1.6."""
 
+import inspect
+
 from django.template.base import Variable, VariableDoesNotExist
 from django.template.context import BaseContext
 from django.db.models import Model
