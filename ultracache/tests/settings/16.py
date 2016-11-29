@@ -16,8 +16,12 @@ INSTALLED_APPS = (
     'ultracache',
     # Include tests because it declares models
     'ultracache.tests',
+    'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.sessions',
     'django.contrib.sites',
+    'rest_framework'
+
 )
 
 CACHES = {

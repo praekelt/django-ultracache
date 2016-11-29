@@ -1,10 +1,12 @@
-import unittest
+import copy
 import json
+import unittest
 
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
-from django.test.client import Client, RequestFactory
+from django.test.utils import override_settings
+from django.conf import settings
 
 from rest_framework.test import APIRequestFactory, APIClient
 
@@ -60,7 +62,7 @@ class DRFTestCase(unittest.TestCase):
         DummyModel.objects.all().delete()
         super(DRFTestCase, self).tearDown()
 
-    def test_anonymous_get_dummymodels(self):
+    def test_get_dummymodels(self):
         response = self.client.get("/api/dummies/")
         as_json_1 = json.loads(response.content)
 
@@ -92,7 +94,17 @@ class DRFTestCase(unittest.TestCase):
         as_json_5 = json.loads(response.content)
         self.assertNotEqual(as_json_4, as_json_5)
 
-    def test_anonymous_get_dummymodel(self):
+        # Add an evaluate parameter which leads to a cache miss. Also
+        # surreptiously edit the object so we can confirm a cache miss.
+        DummyModel.objects.filter(pk=self.one.pk).update(title="Onxe")
+        di = copy.deepcopy(settings.ULTRACACHE)
+        di["drf"] = {"viewsets": {"*": {"evaluate": "request.user.is_anonymous"}}}
+        with override_settings(ULTRACACHE=di):
+            response = self.client.get("/api/dummies/")
+            as_json_6 = json.loads(response.content)
+            self.assertNotEqual(as_json_5, as_json_6)
+
+    def test_get_dummymodel(self):
         url = "/api/dummies/%s/" % self.one.pk
         response = self.client.get(url)
         as_json_1 = json.loads(response.content)
@@ -110,6 +122,3 @@ class DRFTestCase(unittest.TestCase):
         response = self.client.get(url)
         as_json_3 = json.loads(response.content)
         self.assertNotEqual(as_json_1, as_json_3)
-
-
-

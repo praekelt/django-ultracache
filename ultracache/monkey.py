@@ -14,7 +14,7 @@ from django.template.context import BaseContext
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
-from ultracache import SETTINGS
+#from ultracache import SETTINGS
 from ultracache.utils import cache_meta
 
 try:
@@ -124,10 +124,10 @@ def drf_decorator(func):
     def wrapped(context, request, *args, **kwargs):
         li = [request.get_full_path()]
 
-        viewsets = SETTINGS.get("drf", {}).get("viewsets", {})
-        policy = (viewsets.get(context.__class__, {}) or viewsets.get("*", {})).get("policy", None)
-        if policy is not None:
-            li.append(eval(policy))
+        viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
+        evaluate = (viewsets.get(context.__class__, {}) or viewsets.get("*", {})).get("evaluate", None)
+        if evaluate is not None:
+            li.append(eval(evaluate))
 
         if "django.contrib.sites" in settings.INSTALLED_APPS:
             li.append(settings.SITE_ID)
@@ -136,10 +136,8 @@ def drf_decorator(func):
 
         cached_response = cache.get(cache_key, None)
         if cached_response is not None:
-            print "CACHE HIT"
             return cached_response
 
-        print "CACHE MISS"
         obj_or_queryset, response = func(context, request, *args, **kwargs)
 
         if not hasattr(request, "_ultracache"):
