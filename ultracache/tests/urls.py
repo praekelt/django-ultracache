@@ -1,10 +1,15 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 
-from ultracache.tests import views
+from rest_framework.routers import DefaultRouter
+
+from ultracache.tests import views, viewsets
 
 
-urlpatterns = patterns(
-    '',
+router = DefaultRouter()
+router.register(r"dummies", viewsets.DummyViewSet)
+
+urlpatterns = [
+    url(r'^api/', include(router.urls)),
     url(
         r'^render-view/$',
         views.RenderView.as_view(),
@@ -30,4 +35,4 @@ urlpatterns = patterns(
         views.NonBustableCachedView.as_view(),
         name='non-bustable-cached-view'
     ),
-)
+]

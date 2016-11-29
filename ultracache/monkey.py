@@ -129,6 +129,9 @@ def drf_decorator(func):
         if policy is not None:
             li.append(eval(policy))
 
+        if "django.contrib.sites" in settings.INSTALLED_APPS:
+            li.append(settings.SITE_ID)
+
         cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
 
         cached_response = cache.get(cache_key, None)
@@ -136,9 +139,7 @@ def drf_decorator(func):
             print "CACHE HIT"
             return cached_response
 
-        if "django.contrib.sites" in settings.INSTALLED_APPS:
-            li.append(settings.SITE_ID)
-
+        print "CACHE MISS"
         obj_or_queryset, response = func(context, request, *args, **kwargs)
 
         if not hasattr(request, "_ultracache"):
