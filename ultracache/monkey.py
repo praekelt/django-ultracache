@@ -3,12 +3,19 @@ are covered within a containing caching template tag. The patch is based on
 Django 1.9 but is backwards compatible with 1.6."""
 
 import inspect
+import md5
+import types
+from collections import OrderedDict
 
+from django.core.cache import cache
+from django.db.models import Model
 from django.template.base import Variable, VariableDoesNotExist
 from django.template.context import BaseContext
-from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+
+from ultracache import SETTINGS
+from ultracache.utils import cache_meta
 
 try:
     from django.template.base import logger
@@ -100,3 +107,88 @@ def _my_resolve_lookup(self, context):
         return current
 
 Variable._resolve_lookup = _my_resolve_lookup
+
+
+
+"""If Django Rest Framework is installed patch a few mixins. Serializers are
+conceptually the same as templates but make it even easier to track objects."""
+try:
+    from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+    from rest_framework.response import Response
+    HAS_DRF = True
+except ImportError:
+    HAS_DRF = False
+
+
+def drf_decorator(func):
+    def wrapped(context, request, *args, **kwargs):
+        li = [request.get_full_path()]
+
+        viewsets = SETTINGS.get("drf", {}).get("viewsets", {})
+        policy = (viewsets.get(context.__class__, {}) or viewsets.get("*", {})).get("policy", None)
+        if policy is not None:
+            li.append(eval(policy))
+
+        cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
+
+        cached_response = cache.get(cache_key, None)
+        if cached_response is not None:
+            print "CACHE HIT"
+            return cached_response
+
+        if "django.contrib.sites" in settings.INSTALLED_APPS:
+            li.append(settings.SITE_ID)
+
+        obj_or_queryset, response = func(context, request, *args, **kwargs)
+
+        if not hasattr(request, "_ultracache"):
+            setattr(request, "_ultracache", [])
+
+        try:
+            iter(obj_or_queryset)
+        except TypeError:
+            obj_or_queryset = [obj_or_queryset]
+
+        for obj in obj_or_queryset:
+            # get_for_model itself is cached
+            ct = ContentType.objects.get_for_model(obj.__class__)
+            request._ultracache.append((ct.id, obj.pk))
+
+        cache_meta(request, cache_key)
+        response = context.finalize_response(request, response, *args, **kwargs)
+        response.render()
+        # todo: timeout
+        cache.set(cache_key, response, 300)
+        return response
+    return wrapped
+
+
+def mylist(self, request, *args, **kwargs):
+    queryset = self.filter_queryset(self.get_queryset())
+
+    page = self.paginate_queryset(queryset)
+    if page is not None:
+        consider = page
+        serializer = self.get_serializer(page, many=True)
+        response = self.get_paginated_response(serializer.data)
+    else:
+        consider = queryset
+        serializer = self.get_serializer(queryset, many=True)
+        response = Response(serializer.data)
+
+    return consider, response
+
+mylist = drf_decorator(mylist)
+
+
+def myretrieve(self, request, *args, **kwargs):
+    instance = self.get_object()
+    serializer = self.get_serializer(instance)
+    return instance, Response(serializer.data)
+
+myretrieve = drf_decorator(myretrieve)
+
+
+if HAS_DRF:
+    ListModelMixin.list = mylist
+    RetrieveModelMixin.retrieve = myretrieve
