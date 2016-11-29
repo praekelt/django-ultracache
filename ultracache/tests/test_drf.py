@@ -78,3 +78,22 @@ class DRFTestCase(unittest.TestCase):
         as_json_3 = json.loads(response.content)
         self.assertNotEqual(as_json_1, as_json_3)
 
+    def test_anonymous_get_dummymodel(self):
+        url = "/api/dummies/%s/" % self.one.pk
+        response = self.client.get(url)
+        as_json_1 = json.loads(response.content)
+
+        # Drop to low level API so post_save does not trigger, meaning the
+        # cached version is fetched on the next request.
+        DummyModel.objects.filter(pk=self.one.pk).update(title="Onxe")
+        response = self.client.get(url)
+        as_json_2 = json.loads(response.content)
+        self.assertEqual(as_json_1, as_json_2)
+
+        # Modify it the normal way, which removes the item from cache.
+        self.one.title = "Onye"
+        self.one.save()
+        response = self.client.get(url)
+        as_json_3 = json.loads(response.content)
+        self.assertNotEqual(as_json_1, as_json_3)
+
