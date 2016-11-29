@@ -78,6 +78,20 @@ class DRFTestCase(unittest.TestCase):
         as_json_3 = json.loads(response.content)
         self.assertNotEqual(as_json_1, as_json_3)
 
+        # Trivial fetch to prove it is cached now
+        response = self.client.get("/api/dummies/")
+        as_json_4 = json.loads(response.content)
+        self.assertEqual(as_json_3, as_json_4)
+
+        # Modify via API to confirm that post_save is fired implicitly
+        data = {
+            "title": "Onze"
+        }
+        response = self.client.patch("/api/dummies/%s/" % self.one.pk, data)
+        response = self.client.get("/api/dummies/")
+        as_json_5 = json.loads(response.content)
+        self.assertNotEqual(as_json_4, as_json_5)
+
     def test_anonymous_get_dummymodel(self):
         url = "/api/dummies/%s/" % self.one.pk
         response = self.client.get(url)
@@ -96,4 +110,6 @@ class DRFTestCase(unittest.TestCase):
         response = self.client.get(url)
         as_json_3 = json.loads(response.content)
         self.assertNotEqual(as_json_1, as_json_3)
+
+
 
