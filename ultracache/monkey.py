@@ -121,44 +121,53 @@ except ImportError:
 
 
 def drf_decorator(func):
+
     def wrapped(context, request, *args, **kwargs):
-        li = [request.get_full_path()]
-
         viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
-        evaluate = (viewsets.get(context.__class__, {}) or viewsets.get("*", {})).get("evaluate", None)
-        if evaluate is not None:
-            li.append(eval(evaluate))
+        do_cache =  (context.__class__ in viewsets) or ("*" in viewsets)
 
-        if "django.contrib.sites" in settings.INSTALLED_APPS:
-            li.append(settings.SITE_ID)
+        if do_cache:
+            li = [request.get_full_path()]
+            evaluate = (viewsets.get(context.__class__, {}) \
+                or viewsets.get("*", {})).get("evaluate", None)
+            if evaluate is not None:
+                li.append(eval(evaluate))
 
-        cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
+            if "django.contrib.sites" in settings.INSTALLED_APPS:
+                li.append(settings.SITE_ID)
 
-        cached_response = cache.get(cache_key, None)
-        if cached_response is not None:
-            return cached_response
+            cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
+
+            cached_response = cache.get(cache_key, None)
+            if cached_response is not None:
+                return cached_response
 
         obj_or_queryset, response = func(context, request, *args, **kwargs)
 
-        if not hasattr(request, "_ultracache"):
-            setattr(request, "_ultracache", [])
+        if do_cache:
+            if not hasattr(request, "_ultracache"):
+                setattr(request, "_ultracache", [])
 
-        try:
-            iter(obj_or_queryset)
-        except TypeError:
-            obj_or_queryset = [obj_or_queryset]
+            try:
+                iter(obj_or_queryset)
+            except TypeError:
+                obj_or_queryset = [obj_or_queryset]
 
-        for obj in obj_or_queryset:
-            # get_for_model itself is cached
-            ct = ContentType.objects.get_for_model(obj.__class__)
-            request._ultracache.append((ct.id, obj.pk))
+            for obj in obj_or_queryset:
+                # get_for_model itself is cached
+                ct = ContentType.objects.get_for_model(obj.__class__)
+                request._ultracache.append((ct.id, obj.pk))
 
-        cache_meta(request, cache_key)
-        response = context.finalize_response(request, response, *args, **kwargs)
-        response.render()
-        # todo: timeout
-        cache.set(cache_key, response, 300)
-        return response
+            cache_meta(request, cache_key)
+            response = context.finalize_response(request, response, *args, **kwargs)
+            response.render()
+            # todo: timeout
+            cache.set(cache_key, response, 300)
+            return response
+
+        else:
+            return response
+
     return wrapped
 
 
