@@ -31,10 +31,10 @@ class RenderViewNode(template.Node):
         view_name = self.view_name.resolve(context)
         url = reverse(view_name)
         # Resolve needs any possible prefix removed
-        url = re.sub(r'^%s' % get_script_prefix().rstrip('/'), '', url)
+        url = re.sub(r"^%s" % get_script_prefix().rstrip("/"), "", url)
         view, args, kwargs = resolve(url)
         # Call the view. Let any error propagate.
-        request = context['request']
+        request = context["request"]
         result = view(request, *args, **kwargs)
         if isinstance(result, TemplateResponse):
             # The result of a generic view

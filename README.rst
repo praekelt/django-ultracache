@@ -1,6 +1,6 @@
 Django Ultracache
 =================
-**Drop-in replacement for Django's template fragment caching. Provides automatic Django cache invalidation and reverse caching proxy purging.**
+**Drop-in replacement for Django's template fragment caching. Cache views and Django Rest Framework viewsets. Automatic cache invalidation and reverse caching proxy purging.**
 
 .. figure:: https://travis-ci.org/praekelt/django-ultracache.svg?branch=develop
    :align: center
@@ -16,17 +16,14 @@ Installation
 
 #. Add ``ultracache`` to your ``INSTALLED_APPS`` setting.
 
-#. Ensure ``django.core.context_processors.request`` is in ``TEMPLATE_CONTEXT_PROCESSORS`` setting.
+#. Ensure ``django.template.context_processors.request`` is in the context processors setting.
 
-Usage
------
+Features
+--------
 
-``django-ultracache`` provides a template tag ``{% ultracache %}`` that functions like Django's
-standard cache template tag, with these exceptions.
+#. Caches template fragments, views, Django Rest Framework viewsets.
 
 #. It takes the sites framework into consideration, allowing different caching per site.
-
-#. It allows undefined variables to be passed as arguments, thus simplifying the template.
 
 #. Crucially, it is aware of model objects that are subjected to its caching. When an object is modified
    all affected cache key are automatically expired. This allows the user to set longer expiry times without having
@@ -34,10 +31,19 @@ standard cache template tag, with these exceptions.
 
 #. The cache invalidation can be extended to issue purge commands to Varnish, Nginx or other reverse caching proxies.
 
+Usage
+-----
+
+The ``ultracache`` template tag
+*******************************
+
+``django-ultracache`` provides a template tag ``{% ultracache %}`` that functions like Django's
+standard cache template tag, with these exceptions.
+
 Simplest use case::
 
     {% load ultracache_tags %}
-    {% ultracache 3600 'my_identifier' object 123 undefined 'string' %}
+    {% ultracache 3600 "my_identifier" object 123 undefined "string" %}
         {{ object.title }}
     {% endultracache %}
 
@@ -46,14 +52,17 @@ In this example cache keys ``outer`` and ``inner_one`` are expired when object o
 cache key ``inner_two`` remains unaffected::
 
     {% load ultracache_tags %}
-    {% ultracache 1200 'outer' %}
-        {% ultracache 1200 'inner_one' %}
+    {% ultracache 1200 "outer" %}
+        {% ultracache 1200 "inner_one" %}
             title = {{ one.title }}
         {% endultracache %}
-        {% ultracache 1200 'inner_two' %}
+        {% ultracache 1200 "inner_two" %}
             title = {{ two.title }}
         {% endultracache %}
     {% endultracache %}
+
+The ``cached_get`` view decorator
+*********************************
 
 ``django-ultracache`` also provides a decorator ``cached_get`` to cache your views. The parameters
 follow the same rules as the ``ultracache`` template tag except they must all resolve. ``request.get_full_path()`` is
@@ -89,24 +98,60 @@ If your view is used by more than one URL pattern then it is highly recommended 
 apply the ``cached_get`` decorator in the URL pattern. Applying it at class level
 may lead to cache collisions, especially if ``get_template_names`` is overridden.
 
+Django Rest Framework viewset caching
+*************************************
+
+Cache ``list`` and ``retrieve`` actions on viewsets::
+
+    # Cache all viewsets
+    ULTRACACHE = {
+        "drf": {"viewsets": {"*": {}}}
+
+    }
+
+    # Cache a specific viewset
+    ULTRACACHE = {
+        "drf": {"viewsets": {MyViewset: {}}}
+
+    }
+
+    # Timeouts default to 300 seconds
+    ULTRACACHE = {
+        "drf": {"viewsets": {"*": {"timeout": 1200}}}
+
+    }
+
+    # Evaluate code to append to the cache key. This example caches differently
+    # depending on whether the user is logged in or not.
+    ULTRACACHE = {
+        "drf": {"viewsets": {"*": {"evaluate": "request.user.is_anonymous"}}}
+
+    }
+
+Purgers
+*******
+
 You can create custom reverse caching proxy purgers. See ``purgers.py`` for examples::
 
     ULTRACACHE = {
-        'purge': {'method': 'myproduct.purgers.squid'}
+        "purge": {"method": "myproduct.purgers.squid"}
     }
+
+Other settings
+**************
 
 Automatic invalidation defaults to true. To disable automatic invalidation set::
 
     ULTRACACHE = {
-        'invalidate': False
+        "invalidate": False
     }
 
 ``django-ultracache`` maintains a registry in Django's caching backend (see `How does it work`). This registry
-can't be allowed to grow unchecked, thus a limit is imposed on the registry size. It would be inefficient to
+can"t be allowed to grow unchecked, thus a limit is imposed on the registry size. It would be inefficient to
 impose a size limit on the entire registry so a maximum size is set per cached value. It defaults to 25000 bytes::
 
     ULTRACACHE = {
-        'max-registry-value-size': 10000
+        "max-registry-value-size": 10000
     }
 
 It is highly recommended to use a backend that supports compression because a larger size improves cache coherency.
@@ -123,7 +168,7 @@ for changes and expires the appropriate cache keys.
 Tips
 ----
 
-#. If you arre running a cluster of Django nodes then ensure that they use a shared caching backend.
+#. If you are running a cluster of Django nodes then ensure that they use a shared caching backend.
 
 #. Expose objects in your templates. Instead of passing ``object_title`` to a template rather have the
    template dereference ``object.title``.

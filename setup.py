@@ -1,20 +1,20 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='django-ultracache',
-    description='Drop-in replacement for Django\'s template fragment caching. Provides automatic cache invalidation.',
-    long_description = open('README.rst', 'r').read() + open('AUTHORS.rst', 'r').read() + open('CHANGELOG.rst', 'r').read(),
-    version='1.9.1',
-    author='Praekelt Consulting',
-    author_email='dev@praekelt.com',
-    license='BSD',
-    url='http://github.com/praekelt/django-ultracache',
+    name="django-ultracache",
+    description="Drop-in replacement for Django's template fragment caching. Provides automatic cache invalidation.",
+    long_description = open("README.rst", "r").read() + open("AUTHORS.rst", "r").read() + open("CHANGELOG.rst", "r").read(),
+    version="1.10.1",
+    author="Praekelt Consulting",
+    author_email="dev@praekelt.com",
+    license="BSD",
+    url="http://github.com/praekelt/django-ultracache",
     packages = find_packages(),
     dependency_links = [
     ],
     install_requires = [
-        'django',
-        'requests',
+        "django",
+        "requests",
     ],
     classifiers=[
         "Programming Language :: Python",
