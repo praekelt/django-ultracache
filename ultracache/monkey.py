@@ -29,7 +29,7 @@ def _my_resolve_lookup(self, context):
         given context.
 
         As indicated by the method's name, this method is an implementation
-        detail and shouldn't be called by external code. Use Variable.resolve()
+        detail and shouldn"t be called by external code. Use Variable.resolve()
         instead.
         """
         current = context
@@ -41,7 +41,7 @@ def _my_resolve_lookup(self, context):
                     # numpy < 1.9 and 1.9+ respectively
                 except (TypeError, AttributeError, KeyError, ValueError, IndexError):
                     try:  # attribute lookup
-                        # Don't return class attributes if the class is the context:
+                        # Don"t return class attributes if the class is the context:
                         if isinstance(current, BaseContext) and getattr(type(current), bit):
                             raise AttributeError
                         current = getattr(current, bit)
@@ -60,9 +60,9 @@ def _my_resolve_lookup(self, context):
                                                        "[%s] in %r",
                                                        (bit, current))  # missing attribute
                 if callable(current):
-                    if getattr(current, 'do_not_call_in_templates', False):
+                    if getattr(current, "do_not_call_in_templates", False):
                         pass
-                    elif getattr(current, 'alters_data', False):
+                    elif getattr(current, "alters_data", False):
                         try:
                             current = context.template.engine.string_if_invalid
                         except AttributeError:
@@ -81,22 +81,22 @@ def _my_resolve_lookup(self, context):
                             else:
                                 raise
                 elif isinstance(current, Model):
-                    if ('request' in context) and hasattr(context['request'], '_ultracache'):
+                    if ("request" in context) and hasattr(context["request"], "_ultracache"):
                         # get_for_model itself is cached
                         ct = ContentType.objects.get_for_model(current.__class__)
-                        context['request']._ultracache.append((ct.id, current.pk))
+                        context["request"]._ultracache.append((ct.id, current.pk))
 
         except Exception as e:
-            template_name = getattr(context, 'template_name', None) or 'unknown'
+            template_name = getattr(context, "template_name", None) or "unknown"
             if logger is not None:
                 logger.debug(
-                    "Exception while resolving variable '%s' in template '%s'.",
+                    "Exception while resolving variable \"%s\" in template \"%s\".",
                     bit,
                     template_name,
                     exc_info=True,
                 )
 
-            if getattr(e, 'silent_variable_failure', False):
+            if getattr(e, "silent_variable_failure", False):
                 try:
                     current = context.template.engine.string_if_invalid
                 except AttributeError:

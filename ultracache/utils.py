@@ -4,11 +4,11 @@ from django.core.cache import cache
 from django.conf import settings
 
 
-# The metadata itself can't be allowed to grow endlessly. This value is the
+# The metadata itself can"t be allowed to grow endlessly. This value is the
 # maximum size in bytes of a metadata list. If your caching backend supports
 # compression set a larger value.
 try:
-    MAX_SIZE = settings.ULTRACACHE['max-registry-value-size']
+    MAX_SIZE = settings.ULTRACACHE["max-registry-value-size"]
 except (AttributeError, KeyError):
     MAX_SIZE = 25000
 
@@ -55,26 +55,26 @@ def cache_meta(request, cache_key, start_index=0):
     for ctid, obj_pk in request._ultracache[start_index:]:
         # The object appears in these cache entries. If the object is modified
         # then these cache entries are deleted.
-        key = 'ucache-%s-%s' % (ctid, obj_pk)
+        key = "ucache-%s-%s" % (ctid, obj_pk)
         if key not in to_set_get_keys:
             to_set_get_keys.append(key)
 
         # The object appears in these paths. If the object is modified then any
         # caches that are read from when browsing to this path are cleared.
-        key = 'ucache-pth-%s-%s' % (ctid, obj_pk)
+        key = "ucache-pth-%s-%s" % (ctid, obj_pk)
         if key not in to_set_paths_get_keys:
             to_set_paths_get_keys.append(key)
 
         # The content type appears in these cache entries. If an object of this
         # content type is created then these cache entries are cleared.
-        key = 'ucache-ct-%s' % ctid
+        key = "ucache-ct-%s" % ctid
         if key not in to_set_content_types_get_keys:
             to_set_content_types_get_keys.append(key)
 
         # The content type appears in these paths. If an object of this content
         # type is created then any caches that are read from when browsing to
         # this path are cleared.
-        key = 'ucache-ct-pth-%s' % ctid
+        key = "ucache-ct-pth-%s" % ctid
         if key not in to_set_content_types_paths_get_keys:
             to_set_content_types_paths_get_keys.append(key)
 
@@ -166,7 +166,7 @@ def cache_meta(request, cache_key, start_index=0):
     del to_set_content_types_paths
 
     if to_set_objects:
-        di[cache_key + '-objs'] = to_set_objects
+        di[cache_key + "-objs"] = to_set_objects
 
     if di:
         try:
