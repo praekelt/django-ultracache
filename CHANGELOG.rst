@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.10.1
+------
 #. Add caching for Django Rest Framework viewsets.
 #. Django 1.10 compatibility.
 
