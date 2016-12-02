@@ -128,8 +128,9 @@ def drf_decorator(func):
 
         if do_cache:
             li = [request.get_full_path()]
-            evaluate = (viewsets.get(context.__class__, {}) \
-                or viewsets.get("*", {})).get("evaluate", None)
+            viewset_settings = viewsets.get(context.__class__, {}) \
+                or viewsets.get("*", {})
+            evaluate = viewset_settings.get("evaluate", None)
             if evaluate is not None:
                 li.append(eval(evaluate))
 
@@ -161,7 +162,7 @@ def drf_decorator(func):
             cache_meta(request, cache_key)
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
-            # todo: timeout
+            evaluate = viewset_settings.get("timeout", 300)
             cache.set(cache_key, response, 300)
             return response
 

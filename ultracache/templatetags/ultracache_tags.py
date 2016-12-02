@@ -2,7 +2,6 @@ from django import template
 from django.utils.translation import ugettext as _
 from django.utils.functional import Promise
 from django.templatetags.cache import CacheNode
-from django.template import resolve_variable
 from django.template.base import VariableDoesNotExist
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
