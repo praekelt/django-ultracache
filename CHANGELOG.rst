@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+#. Add caching for Django Rest Framework viewsets.
+#. Django 1.10 compatibility.
+
 1.9.1
 -----
 #. Add missing import only surfacing in certain code paths.

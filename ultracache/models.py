@@ -9,26 +9,32 @@ except ImportError:
     from django.utils.module_loading import import_by_path as importer
 from django.conf import settings
 
-if 'django.core.context_processors.request' not in \
-    settings.TEMPLATE_CONTEXT_PROCESSORS \
-    and 'django.template.context_processors.request' not in \
-    settings.TEMPLATE_CONTEXT_PROCESSORS:
+# Ensure request context processor is active. Handle all styles of the setting.
+try:
+    tcp = settings.TEMPLATES[0]["OPTIONS"]["context_processors"]
+except (AttributeError, KeyError):
+    try:
+        tcp = settings.TEMPLATE_CONTEXT_PROCESSORS
+    except AttributeError:
+        tcp = []
+
+if ("django.core.context_processors.request" not in tcp) \
+    and ("django.template.context_processors.request" not in tcp):
     raise RuntimeError(
-        'django.core.context_processors.request is required in '
-        + 'TEMPLATE_CONTEXT_PROCESSORS'
+        "django.template.context_processors.request is required"
     )
 
 import ultracache.monkey
 
 
 try:
-    purger = importer(settings.ULTRACACHE['purge']['method'])
+    purger = importer(settings.ULTRACACHE["purge"]["method"])
 except (AttributeError, KeyError):
     purger = None
 
 
 try:
-    invalidate = settings.ULTRACACHE['invalidate']
+    invalidate = settings.ULTRACACHE["invalidate"]
 except (AttributeError, KeyError):
     invalidate = True
 
@@ -39,10 +45,10 @@ def on_post_save(sender, **kwargs):
     """
     if not invalidate:
         return
-    if kwargs.get('raw', False):
+    if kwargs.get("raw", False):
         return
     if issubclass(sender, Model):
-        obj = kwargs['instance']
+        obj = kwargs["instance"]
         if isinstance(obj, Model):
             # get_for_model itself is cached
             try:
@@ -52,9 +58,9 @@ def on_post_save(sender, **kwargs):
                 # during a test run.
                 return
 
-            if kwargs.get('created', False):
+            if kwargs.get("created", False):
                 # Expire cache keys that contain objects of this content type
-                key = 'ucache-ct-%s' % ct.id
+                key = "ucache-ct-%s" % ct.id
                 to_delete = cache.get(key, [])
                 if to_delete:
                     try:
@@ -66,7 +72,7 @@ def on_post_save(sender, **kwargs):
 
                 # Purge paths in reverse caching proxy that contain objects of
                 # this content type.
-                key = 'ucache-ct-pth-%s' % ct.id
+                key = "ucache-ct-pth-%s" % ct.id
                 if purger is not None:
                     for path in cache.get(key, []):
                         purger(path)
@@ -74,7 +80,7 @@ def on_post_save(sender, **kwargs):
 
             else:
                 # Expire cache keys
-                key = 'ucache-%s-%s' % (ct.id, obj.pk)
+                key = "ucache-%s-%s" % (ct.id, obj.pk)
                 to_delete = cache.get(key, [])
                 if to_delete:
                     try:
@@ -85,7 +91,7 @@ def on_post_save(sender, **kwargs):
                 cache.delete(key)
 
                 # Purge paths in reverse caching proxy
-                key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
+                key = "ucache-pth-%s-%s" % (ct.id, obj.pk)
                 if purger is not None:
                     for path in cache.get(key, []):
                         purger(path)
@@ -99,7 +105,7 @@ def on_post_delete(sender, **kwargs):
     if not invalidate:
         return
     if issubclass(sender, Model):
-        obj = kwargs['instance']
+        obj = kwargs["instance"]
         if isinstance(obj, Model):
             # get_for_model itself is cached
             try:
@@ -110,7 +116,7 @@ def on_post_delete(sender, **kwargs):
                 return
 
             # Expire cache keys
-            key = 'ucache-%s-%s' % (ct.id, obj.pk)
+            key = "ucache-%s-%s" % (ct.id, obj.pk)
             to_delete = cache.get(key, [])
             if to_delete:
                 try:
@@ -121,7 +127,7 @@ def on_post_delete(sender, **kwargs):
             cache.delete(key)
 
             # Invalidate paths in reverse caching proxy
-            key = 'ucache-pth-%s-%s' % (ct.id, obj.pk)
+            key = "ucache-pth-%s-%s" % (ct.id, obj.pk)
             if purger is not None:
                 for path in cache.get(key, []):
                     purger(path)
