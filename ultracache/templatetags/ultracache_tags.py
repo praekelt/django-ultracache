@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.conf import settings
 
-from ultracache.utils import cache_meta
+from ultracache.utils import cache_meta, get_current_site_pk
 
 
 register = template.Library()
@@ -57,7 +57,7 @@ class UltraCacheNode(CacheNode):
 
         vary_on = []
         if "django.contrib.sites" in settings.INSTALLED_APPS:
-            vary_on.append(str(settings.SITE_ID))
+            vary_on.append(str(get_current_site_pk(request)))
 
         for var in self.vary_on:
             try:

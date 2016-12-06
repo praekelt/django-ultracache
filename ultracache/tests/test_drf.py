@@ -1,10 +1,9 @@
 import copy
 import json
-import unittest
-
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django.test.utils import override_settings
 from django.conf import settings
 
@@ -14,14 +13,13 @@ from ultracache.tests.models import DummyModel
 from ultracache.tests.viewsets import DummyViewSet
 
 
-class DRFTestCase(unittest.TestCase):
+class DRFTestCase(TestCase):
+    fixtures = ["sites.json"]
 
     @classmethod
-    def setUpClass(cls):
-        super(DRFTestCase, cls).setUpClass()
+    def setUpTestData(cls):
+        super(DRFTestCase, cls).setUpTestData()
 
-        cls.factory = APIRequestFactory()
-        cls.client = APIClient()
         cls.user_model = get_user_model()
 
         # Superuser
@@ -51,9 +49,10 @@ class DRFTestCase(unittest.TestCase):
         cls.user.set_password("password")
         cls.user.save()
 
-
     def setUp(self):
         super(DRFTestCase, self).setUp()
+        self.factory = APIRequestFactory()
+        self.client = APIClient()
         self.client.logout()
         self.one = DummyModel.objects.create(title="One", code="one")
         self.two = DummyModel.objects.create(title="Two", code="two")
@@ -123,7 +122,7 @@ class DRFTestCase(unittest.TestCase):
         response = self.client.get("/api/dummies/")
         as_json_9 = json.loads(response.content)
 
-        # Enavle viewset caching for a single viewset class. Also
+        # Enable viewset caching for a single viewset class. Also
         # surreptiously edit the object so we can confirm a cache hit.
         DummyModel.objects.filter(pk=self.one.pk).update(title="Onee")
         di = copy.deepcopy(settings.ULTRACACHE)

@@ -1,6 +1,11 @@
 import sys
 
 from django.core.cache import cache
+from django.contrib.sites.models import Site
+try:
+    from django.contrib.sites.shortcuts import get_current_site
+except ImportError:
+    from django.contrib.sites.models import get_current_site
 from django.conf import settings
 
 
@@ -174,3 +179,9 @@ def cache_meta(request, cache_key, start_index=0):
         except NotImplementedError:
             for k, v in di.items():
                 cache.set(k, v, 86400)
+
+
+def get_current_site_pk(request):
+    """Seemingly pointless function is so calling code doesn't have to worry
+    about the import issues between Django 1.6 and later."""
+    return get_current_site(request).pk
