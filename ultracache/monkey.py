@@ -14,8 +14,7 @@ from django.template.context import BaseContext
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
-#from ultracache import SETTINGS
-from ultracache.utils import cache_meta
+from ultracache.utils import cache_meta, get_current_site_pk
 
 try:
     from django.template.base import logger
@@ -135,7 +134,7 @@ def drf_decorator(func):
                 li.append(eval(evaluate))
 
             if "django.contrib.sites" in settings.INSTALLED_APPS:
-                li.append(settings.SITE_ID)
+                li.append(get_current_site_pk(request))
 
             cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
 
