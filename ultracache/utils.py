@@ -182,11 +182,6 @@ def cache_meta(request, cache_key, start_index=0):
 
 
 def get_current_site_pk(request):
-    # todo: cache
+    """Seemingly pointless function is so calling code doesn't have to worry
+    about the import issues between Django 1.6 and later."""
     return get_current_site(request).pk
-    try:
-        print "ooooooooooooooo"
-        return get_current_site(request).pk
-    except Site.DoesNotExist:
-        print "xxxxxxxX"
-        return settings.SITE_ID

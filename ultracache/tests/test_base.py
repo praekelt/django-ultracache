@@ -21,10 +21,17 @@ class TemplateTagsTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super(TemplateTagsTestCase, cls).setUpClass()
-        cls.request = RequestFactory()
-        cls.request.method = 'GET'
-        cls.request._path = '/'
-        cls.request.get_full_path = lambda: cls.request._path
+        #cls.request = RequestFactory()
+        #cls.request.method = 'GET'
+        #cls.request._path = '/'
+        #cls.request.get_full_path = lambda: cls.request._path
+
+        cls.factory = RequestFactory()
+        cls.request = cls.factory.get('/')
+        #cls.request.method = 'GET'
+        #cls.request._path = '/'
+        #cls.request.get_full_path = lambda: cls.request._path
+
         cache.clear()
         dummy_proxy.clear()
         cls.first_site = Site.objects.all().first()
@@ -51,15 +58,11 @@ class TemplateTagsTestCase(TestCase):
         context = template.Context({'request' : self.request})
         result1 = t.render(context)
         with override_settings(SITE_ID=self.second_site.id):
-            #settings.SITE_ID = self.second_site.id
-            #Site.objects.clear_cache()
             t = template.Template("{%% load ultracache_tags %%}\
                 {%% ultracache 1200 'test_ultracache' %%}%s{%% endultracache %%}" % self.second_site.id
             )
             context = template.Context({'request' : self.request})
             result2 = t.render(context)
-            #settings.SITE_ID = self.second_site.id
-            #Site.objects.clear_cache()
             self.failIfEqual(result1, result2)
 
     def test_variables(self):
@@ -144,14 +147,14 @@ class TemplateTagsTestCase(TestCase):
         )
 
         # Initial render
+        request = self.factory.get('/aaa/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': two,
             'three': three,
             'counter': 1
         })
-        self.request._path = '/aaa/'
         result = t.render(context)
         dummy_proxy.cache('/aaa/', result)
         self.failUnless('title = One' in result)
@@ -167,14 +170,14 @@ class TemplateTagsTestCase(TestCase):
         # Change object one
         one.title = 'Onxe'
         one.save()
+        request = self.factory.get('/bbb/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': two,
             'three': three,
             'counter': 2
         })
-        self.request._path = '/bbb/'
         result = t.render(context)
         dummy_proxy.cache('/bbb/', result)
         self.failUnless('title = Onxe' in result)
@@ -191,14 +194,14 @@ class TemplateTagsTestCase(TestCase):
         # Change object two
         two.title = 'Twxo'
         two.save()
+        request = self.factory.get('/ccc/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': two,
             'three': three,
             'counter': 3
         })
-        self.request._path = '/ccc/'
         result = t.render(context)
         dummy_proxy.cache('/ccc/', result)
         self.failUnless('title = Onxe' in result)
@@ -216,14 +219,14 @@ class TemplateTagsTestCase(TestCase):
         # Change object three
         three.title = 'Threxe'
         three.save()
+        request = self.factory.get('/ddd/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': two,
             'three': three,
             'counter': 4
         })
-        self.request._path = '/ddd/'
         result = t.render(context)
         dummy_proxy.cache('/ddd/', result)
         self.failUnless('title = Onxe' in result)
@@ -242,14 +245,14 @@ class TemplateTagsTestCase(TestCase):
 
         # Add a DummyOtherModel object five
         five = DummyOtherModel.objects.create(title='Five', code='five')
+        request = self.factory.get('/eee/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': two,
             'three': three,
             'counter': 5
         })
-        self.request._path = '/eee/'
         result = t.render(context)
         dummy_proxy.cache('/eee/', result)
         # RenderView is only view aware of DummyOtherModel. That means
@@ -264,14 +267,14 @@ class TemplateTagsTestCase(TestCase):
 
         # Delete object two
         two.delete()
+        request = self.factory.get('/fff/')
         context = template.Context({
-            'request' : self.request,
+            'request' : request,
             'one': one,
             'two': None,
             'three': three,
             'counter': 6
         })
-        self.request._path = '/fff/'
         result = t.render(context)
         dummy_proxy.cache('/fff/', result)
         self.failUnless('title = Onxe' in result)
@@ -290,11 +293,7 @@ class DecoratorTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super(DecoratorTestCase, cls).setUpClass()
-        cls.request = RequestFactory()
-        cls.request.method = 'GET'
-        cls.request._path = '/'
-        cls.request.get_full_path = lambda: cls.request._path
-        cls.client = Client()
+        cls.request = RequestFactory().get('/')
         cache.clear()
         dummy_proxy.clear()
         cls.first_site = Site.objects.all().first()
