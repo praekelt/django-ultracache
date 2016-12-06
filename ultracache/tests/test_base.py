@@ -21,17 +21,8 @@ class TemplateTagsTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super(TemplateTagsTestCase, cls).setUpClass()
-        #cls.request = RequestFactory()
-        #cls.request.method = 'GET'
-        #cls.request._path = '/'
-        #cls.request.get_full_path = lambda: cls.request._path
-
         cls.factory = RequestFactory()
         cls.request = cls.factory.get('/')
-        #cls.request.method = 'GET'
-        #cls.request._path = '/'
-        #cls.request.get_full_path = lambda: cls.request._path
-
         cache.clear()
         dummy_proxy.clear()
         cls.first_site = Site.objects.all().first()
