@@ -8,7 +8,7 @@ from django.utils.decorators import available_attrs
 from django.views.generic.base import TemplateResponseMixin
 from django.conf import settings
 
-from ultracache.utils import cache_meta
+from ultracache.utils import cache_meta, get_current_site_pk
 
 
 def cached_get(timeout, *params):
@@ -48,7 +48,7 @@ def cached_get(timeout, *params):
                 li.append(request.get_full_path())
 
             if "django.contrib.sites" in settings.INSTALLED_APPS:
-                li.append(settings.SITE_ID)
+                li.append(get_current_site_pk(request))
 
             # Pre-sort kwargs
             keys = kwargs.keys()

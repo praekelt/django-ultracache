@@ -1,0 +1,18 @@
+[
+{
+    "model": "sites.site",
+    "pk": 1,
+    "fields": {
+        "domain": "testserver",
+        "name": "testserver"
+    }
+},
+{
+    "model": "sites.site",
+    "pk": 2,
+    "fields": {
+        "domain": "testserverb",
+        "name": "testserverb"
+    }
+}
+]

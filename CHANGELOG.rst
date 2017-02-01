@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.10.2
+------
+#. Remove logic that depends on SITE_ID so site can also be inferred from the request.
+
 1.10.1
 ------
 #. Add caching for Django Rest Framework viewsets.
