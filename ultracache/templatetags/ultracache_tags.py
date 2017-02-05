@@ -51,6 +51,7 @@ class UltraCacheNode(CacheNode):
         # objects.
         if not hasattr(request, "_ultracache"):
             setattr(request, "_ultracache", [])
+            setattr(request, "_ultracache_points", [])
             start_index = 0
         else:
             start_index = len(request._ultracache)
@@ -71,9 +72,27 @@ class UltraCacheNode(CacheNode):
         cache_key = make_template_fragment_key(self.fragment_name, vary_on)
         value = cache.get(cache_key)
         if value is None:
+
+            # The outermost tag is responsible for calling cache_meta. Mark it
+            # if not marked yet.
+            outer = False
+            if not hasattr(request, "_ultracache_outer_node"):
+                setattr(request, "_ultracache_outer_node", True)
+                outer = True
+
             value = self.nodelist.render(context)
+
+            # Keep track of which variables belong to this tag
+            request._ultracache_points.append(
+                (start_index, len(request._ultracache), cache_key)
+            )
+
             cache.set(cache_key, value, expire_time)
-            cache_meta(request, cache_key, start_index)
+
+            # Finally call cache meta if we are the outer tag
+            if outer:
+                cache_meta(request, cache_key)
+
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.

@@ -66,8 +66,10 @@ def cached_get(timeout, *params):
             cache_key = "ucache-get-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:
-                # The get view as outermost caller may bluntly set _ultracache
+                # The get view as outermost caller may set state variables
                 request._ultracache = []
+                request._ultracache_points = []
+                request._ultracache_outer_node = True
                 response = view_func(view_or_request, *args, **kwargs)
                 content = getattr(response, "rendered_content", None) \
                     or getattr(response, "content", None)

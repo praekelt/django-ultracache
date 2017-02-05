@@ -321,6 +321,7 @@ class DecoratorTestCase(TestCase):
         one.save()
         response = self.client.get(url)
         result = response.content
+        print result
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
