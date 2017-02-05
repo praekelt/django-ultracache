@@ -47,10 +47,10 @@ def cache_meta(request):
     all_to_delete = []
     all_to_set = {}
 
-    print "CACHE_META"
+    # Iterate in reverse order because templates are rendered from the inside
+    # out.
     for start_index, end_index, cache_key in \
         reversed(request._ultracache_cache_key_range):
-        print start_index, cache_key
 
         # Lists needed for cache.get_many
         to_set_get_keys = []
@@ -68,13 +68,9 @@ def cache_meta(request):
         to_set_objects = []
 
         for ctid, obj_pk in request._ultracache[start_index:end_index]:
-            #print start_index, ctid, obj_pk
             # The object appears in these cache entries. If the object is modified
             # then these cache entries are deleted.
             key = "ucache-%s-%s" % (ctid, obj_pk)
-            #if key == "ucache-1-1":
-            #    print "BBBBBB"
-            #    print cache_key
             if key not in to_set_get_keys:
                 to_set_get_keys.append(key)
 

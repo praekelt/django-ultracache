@@ -81,11 +81,8 @@ def on_post_save(sender, **kwargs):
             else:
                 # Expire cache keys
                 key = "ucache-%s-%s" % (ct.id, obj.pk)
-                print "aaaaaaaaaaaa"
-                print key
                 to_delete = cache.get(key, [])
                 if to_delete:
-                    print to_delete
                     try:
                         cache.delete_many(to_delete)
                     except NotImplementedError:

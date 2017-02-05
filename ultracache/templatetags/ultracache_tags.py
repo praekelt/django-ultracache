@@ -1,3 +1,5 @@
+import hashlib
+
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.functional import Promise
@@ -69,7 +71,11 @@ class UltraCacheNode(CacheNode):
                 r = unicode(r)
             vary_on.append(r)
 
+        # Compute a cache key. In non-debug we want it down to the minimum.
         cache_key = make_template_fragment_key(self.fragment_name, vary_on)
+        if not settings.DEBUG:
+            cache_key = hashlib.md5(cache_key).hexdigest()
+
         value = cache.get(cache_key)
         if value is None:
 
