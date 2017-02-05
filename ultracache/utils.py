@@ -36,7 +36,7 @@ def reduce_list_size(li):
     return keep, toss
 
 
-def cache_meta(request, lcache_key, lstart_index=0):
+def cache_meta(request):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
@@ -48,7 +48,8 @@ def cache_meta(request, lcache_key, lstart_index=0):
     all_to_set = {}
 
     print "CACHE_META"
-    for start_index, end_index, cache_key in reversed(getattr(request, "_ultracache_points")):
+    for start_index, end_index, cache_key in \
+        reversed(request._ultracache_cache_key_range):
         print start_index, cache_key
 
         # Lists needed for cache.get_many
@@ -117,8 +118,6 @@ def cache_meta(request, lcache_key, lstart_index=0):
                 to_set[key] = to_set[key] + [cache_key]
         if to_set == di:
             to_set = {}
-        print "MMMMMMMMMMMMMM"
-        print to_set
 
         di = cache.get_many(to_set_paths_get_keys)
         for key in to_set_paths_get_keys:
@@ -181,6 +180,10 @@ def cache_meta(request, lcache_key, lstart_index=0):
         if to_set_objects:
             all_to_set[cache_key + "-objs"] = to_set_objects
             del to_set_objects
+
+    # Remove dupes from lists
+    for k, v in all_to_set.items():
+        all_to_set[k] = list(set(v))
 
     # Deletion must happen first because set may set some of these keys
     if all_to_delete:

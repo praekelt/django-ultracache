@@ -63,7 +63,6 @@ def on_post_save(sender, **kwargs):
                 key = "ucache-ct-%s" % ct.id
                 to_delete = cache.get(key, [])
                 if to_delete:
-                    print to_delete
                     try:
                         cache.delete_many(to_delete)
                     except NotImplementedError:

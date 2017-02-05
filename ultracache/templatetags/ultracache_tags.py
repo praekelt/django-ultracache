@@ -51,7 +51,7 @@ class UltraCacheNode(CacheNode):
         # objects.
         if not hasattr(request, "_ultracache"):
             setattr(request, "_ultracache", [])
-            setattr(request, "_ultracache_points", [])
+            setattr(request, "_ultracache_cache_key_range", [])
             start_index = 0
         else:
             start_index = len(request._ultracache)
@@ -83,7 +83,7 @@ class UltraCacheNode(CacheNode):
             value = self.nodelist.render(context)
 
             # Keep track of which variables belong to this tag
-            request._ultracache_points.append(
+            request._ultracache_cache_key_range.append(
                 (start_index, len(request._ultracache), cache_key)
             )
 
@@ -91,7 +91,7 @@ class UltraCacheNode(CacheNode):
 
             # Finally call cache meta if we are the outer tag
             if outer:
-                cache_meta(request, cache_key)
+                cache_meta(request)
 
         else:
             # A cached result was found. Set tuples in _ultracache manually so
