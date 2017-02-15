@@ -40,8 +40,12 @@ def cache_meta(request, cache_key, start_index=0):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
+    print "CACHE META"
+    print request._ultracache
+    print request._ultracache_cache_key_range
     path = request.get_full_path()
 
+<<<<<<< Updated upstream
     # Lists needed for cache.get_many
     to_set_get_keys = []
     to_set_paths_get_keys = []
@@ -103,6 +107,27 @@ def cache_meta(request, cache_key, start_index=0):
                 to_set[key] = keep
             to_set[key] = to_set[key] + [cache_key]
     if to_set == di:
+=======
+    # List and a dictionary needed for one cache.delete_many and one
+    # cache.set_many call.
+    all_to_delete = []
+    all_to_set = {}
+
+    # Iterate in reverse order because templates are rendered from the inside
+    # out.
+    from random import shuffle
+    #shuffle(request._ultracache_cache_key_range)
+    for start_index, end_index, cache_key in \
+        request._ultracache_cache_key_range:
+
+        # Lists needed for cache.get_many
+        to_set_get_keys = []
+        to_set_paths_get_keys = []
+        to_set_content_types_get_keys = []
+        to_set_content_types_paths_get_keys = []
+
+        # Dictionaries needed for cache.set_many
+>>>>>>> Stashed changes
         to_set = {}
 
     di = cache.get_many(to_set_paths_get_keys)

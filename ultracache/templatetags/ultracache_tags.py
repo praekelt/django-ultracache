@@ -7,12 +7,32 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.conf import settings
 
+from template_multiprocessing.decorators import multiprocess
+
 from ultracache.utils import cache_meta, get_current_site_pk
 
 
 register = template.Library()
 
 
+def callback(request, process_request, last=False):
+    if not hasattr(request, "_ultracache"):
+        setattr(request, "_ultracache", [])
+        setattr(request, "_ultracache_cache_key_range", [])
+
+    print process_request
+    request._ultracache.extend(process_request["_ultracache"])
+    start_index = len(request._ultracache)
+    for tu in process_request["_ultracache_cache_key_range"]:
+        request._ultracache_cache_key_range.append(
+            (tu[0] + start_index, tu[1], tu[2])
+        )
+
+    if last:
+        cache_meta(request)
+
+
+@multiprocess("ultracache.templatetags.ultracache_tags.callback")
 class UltraCacheNode(CacheNode):
     """Based on Django's default cache template tag. Add SITE_ID as implicit
     vary on parameter is sites product is installed. Allow unresolvable

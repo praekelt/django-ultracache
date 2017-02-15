@@ -21,7 +21,8 @@ INSTALLED_APPS = (
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
-    "rest_framework"
+    "rest_framework",
+    "template_multiprocessing",
 )
 
 CACHES = {
