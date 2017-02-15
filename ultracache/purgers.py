@@ -24,6 +24,8 @@ def nginx(path):
     except requests.exceptions.RequestException:
         pass
 
+
+def nginx_more_examples(path):
     # More nodes
     for host in ("196.1.2.3", "196.1.2.4"):
         loc = "http://%s%s" % (host, path)
@@ -47,4 +49,3 @@ def nginx(path):
         body=path
     )
     connection.close()
-

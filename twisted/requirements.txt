@@ -1,13 +1,13 @@
 Twisted==15.5.0
 argparse==1.2.1
-cffi==1.5.0
+cffi
 characteristic==14.3.0
-cryptography==1.2.1
+cryptography
 enum34==1.1.2
 idna==2.0
 ipaddress==1.0.16
 pika==0.10.0
-pyOpenSSL==0.15.1
+pyOpenSSL
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 pycparser==2.14

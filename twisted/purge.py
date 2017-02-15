@@ -1,7 +1,8 @@
 """Monitor service to consume RabbitMQ messages. This twisted plugin typically
 runs on each node that runs nginx.
 
-You must edit process_queue to suit your needs."""
+You must edit process_queue to suit your needs.
+todo: config driven"""
 
 import treq
 import pika
@@ -13,7 +14,7 @@ from twisted.internet.error import ConnectError, DNSLookupError
 from twisted.web.client import ResponseFailed
 
 
-class MonitorService(service.Service):
+class PurgeService(service.Service):
     """Receive and pass on messages from a RabbitMQ exchange"""
 
     def connect(self):
@@ -45,19 +46,19 @@ class MonitorService(service.Service):
             ch, method, properties, body = thing
             if body:
                 path = body
-                print "PURGE %s %s" % (ua_map, path)
+                print "PURGE %s" % path
                 try:
                     response = yield treq.request(
                         "PURGE", "http://127.0.0.1" + path,
-                        cookies={"foo": "bar"},
+                        #cookies={"foo": "bar"},
                         headers={"Host": "actual.host.com"},
                         timeout=10
                     )
                 except (ConnectError, DNSLookupError, CancelledError, ResponseFailed):
                     # Maybe better to do a blank except?
-                    print "ERROR %s %s" (ua_map, path)
+                    print "ERROR %s" path
                 else:
-                    print "RESULT %s %s" % (ua_map, path)
+                    print "RESULT %s" path
                     content = yield response.content()
                     print content
 
@@ -80,4 +81,4 @@ class MonitorService(service.Service):
 
 
 def makeService():
-    return MonitorService()
+    return PurgeService()

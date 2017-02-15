@@ -4,7 +4,7 @@ from twisted.python import usage
 from twisted.plugin import IPlugin
 from twisted.application.service import IServiceMaker
 
-import monitor
+import purge
 
 
 class Options(usage.Options):
@@ -13,14 +13,15 @@ class Options(usage.Options):
     ]
 
 
-class MonitorServiceMaker(object):
+class PurgeServiceMaker(object):
     implements(IServiceMaker, IPlugin)
-    tapname = "monitor"
-    description = "Monitor RabbitMQ fanout exchange called echidna"
+    tapname = "purge"
+    description = """Subscribe to RabbitMQ fanout exchange called purgatory \
+and send purge instruction to a reverse caching proxy."""
     options = Options
 
     def makeService(self, options):
-        return monitor.makeService()
+        return purge.makeService()
 
 
-serviceMaker = MonitorServiceMaker()
+serviceMaker = PurgeServiceMaker()
