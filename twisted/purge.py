@@ -1,11 +1,9 @@
 """Monitor service to consume RabbitMQ messages. This twisted plugin typically
-runs on each node that runs nginx.
+runs on each node that runs nginx."""
 
-You must edit process_queue to suit your needs.
-todo: config driven"""
-
-import treq
 import pika
+import treq
+import yaml
 from pika.adapters import twisted_connection
 from twisted.application import service
 from twisted.internet import defer, reactor, protocol
@@ -17,11 +15,21 @@ from twisted.web.client import ResponseFailed
 class PurgeService(service.Service):
     """Receive and pass on messages from a RabbitMQ exchange"""
 
+    def __init__(self, options, *args, **kwargs):
+        config_file = options.get("config")
+        self.config = {}
+        if config_file:
+            self.config = yaml.load(open(config_file))
+        return super(PurgeService, self).__init__(*args, **kwargs)
+
     def connect(self):
         parameters = pika.ConnectionParameters()
         cc = protocol.ClientCreator(
             reactor, twisted_connection.TwistedProtocolConnection, parameters)
-        d = cc.connectTCP("localhost", 5672)
+        d = cc.connectTCP(
+            self.config.get("rabbit-host", "localhost"),
+            self.config.get("rabbit-port", 5672)
+        )
         d.addCallback(lambda protocol: protocol.ready)
         d.addCallback(self.setup_connection)
         return d
@@ -49,16 +57,17 @@ class PurgeService(service.Service):
                 print "PURGE %s" % path
                 try:
                     response = yield treq.request(
-                        "PURGE", "http://127.0.0.1" + path,
+                        "PURGE", "http://" \
+                            + self.config.get("nginx-host", "127.0.0.1") + path,
                         #cookies={"foo": "bar"},
-                        headers={"Host": "actual.host.com"},
+                        headers={"Host": self.config.get("domain", "actual.host.com")},
                         timeout=10
                     )
                 except (ConnectError, DNSLookupError, CancelledError, ResponseFailed):
                     # Maybe better to do a blank except?
-                    print "ERROR %s" path
+                    print "ERROR %s" % path
                 else:
-                    print "RESULT %s" path
+                    print "RESULT %s" % path
                     content = yield response.content()
                     print content
 
@@ -80,5 +89,5 @@ class PurgeService(service.Service):
         self.running = 0
 
 
-def makeService():
-    return PurgeService()
+def makeService(options):
+    return PurgeService(options)

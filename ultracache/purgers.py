@@ -25,6 +25,14 @@ def nginx(path):
         pass
 
 
+def broadcast(path):
+    # The preferred way requires RabbitMQ and celery being installed and
+    # configured.
+    print "got a purge for %s" % path
+    from ultracache.tasks import broadcast_purge
+    broadcast_purge.delay(path)
+
+
 def nginx_more_examples(path):
     # More nodes
     for host in ("196.1.2.3", "196.1.2.4"):

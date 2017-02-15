@@ -9,7 +9,7 @@ import purge
 
 class Options(usage.Options):
     optParameters = [
-        ["config", "c", "config.yaml", "Optional config file"],
+        ["config", "c", "", "Optional config file"],
     ]
 
 
@@ -21,7 +21,7 @@ and send purge instruction to a reverse caching proxy."""
     options = Options
 
     def makeService(self, options):
-        return purge.makeService()
+        return purge.makeService(options)
 
 
 serviceMaker = PurgeServiceMaker()

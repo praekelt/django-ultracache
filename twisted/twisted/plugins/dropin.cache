@@ -1,5 +1,5 @@
 (dp1
-S'monitor_plugin'
+S'purge_plugin'
 p2
 ccopy_reg
 _reconstructor
@@ -14,7 +14,7 @@ NtRp6
 (dp7
 S'moduleName'
 p8
-S'twisted.plugins.monitor_plugin'
+S'twisted.plugins.purge_plugin'
 p9
 sS'description'
 p10
