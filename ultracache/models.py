@@ -63,6 +63,8 @@ def on_post_save(sender, **kwargs):
                 key = "ucache-ct-%s" % ct.id
                 to_delete = cache.get(key, [])
                 if to_delete:
+                    if "163232e2f0f92da1c20e6c2f2d1b70fc" in to_delete:
+                        print "DELETE"
                     try:
                         cache.delete_many(to_delete)
                     except NotImplementedError:
@@ -83,6 +85,10 @@ def on_post_save(sender, **kwargs):
                 key = "ucache-%s-%s" % (ct.id, obj.pk)
                 to_delete = cache.get(key, [])
                 if to_delete:
+                    #print "EXPIRE THESE KEYS"
+                    #print to_delete
+                    if "163232e2f0f92da1c20e6c2f2d1b70fc" in to_delete:
+                        print "DELETE"
                     try:
                         cache.delete_many(to_delete)
                     except NotImplementedError:
@@ -119,6 +125,8 @@ def on_post_delete(sender, **kwargs):
             key = "ucache-%s-%s" % (ct.id, obj.pk)
             to_delete = cache.get(key, [])
             if to_delete:
+                if "163232e2f0f92da1c20e6c2f2d1b70fc" in to_delete:
+                        print "DELETE"
                 try:
                     cache.delete_many(to_delete)
                 except NotImplementedError:

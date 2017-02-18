@@ -1,3 +1,5 @@
+import hashlib
+
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.functional import Promise
@@ -20,14 +22,23 @@ def callback(request, process_request, last=False):
         setattr(request, "_ultracache", [])
         setattr(request, "_ultracache_cache_key_range", [])
 
-    print process_request
+    #print process_request
+    #print "CALLBACK 'REQUEST'"
+    #print process_request
+    #print "xxxxxxxxxxxxxxx"
     request._ultracache.extend(process_request["_ultracache"])
+    request._ultracache_cache_key_range.extend(process_request["_ultracache_cache_key_range"])
+    
+    '''
     start_index = len(request._ultracache)
     for tu in process_request["_ultracache_cache_key_range"]:
-        request._ultracache_cache_key_range.append(
-            (tu[0] + start_index, tu[1], tu[2])
-        )
+        #print "CALLBACK ADD CACHE_KEY_RANGE"
+        #print (tu[0], tu[1], tu[2])
 
+        request._ultracache_cache_key_range.append(
+            (tu[0], tu[1], tu[2])
+        )
+    '''
     if last:
         cache_meta(request)
 
@@ -71,6 +82,7 @@ class UltraCacheNode(CacheNode):
         # objects.
         if not hasattr(request, "_ultracache"):
             setattr(request, "_ultracache", [])
+            setattr(request, "_ultracache_cache_key_range", [])
             start_index = 0
         else:
             start_index = len(request._ultracache)
@@ -88,16 +100,46 @@ class UltraCacheNode(CacheNode):
                 r = unicode(r)
             vary_on.append(r)
 
+        # Compute a cache key. In non-debug we want it down to the minimum.
         cache_key = make_template_fragment_key(self.fragment_name, vary_on)
+        if not settings.DEBUG:
+            cache_key = hashlib.md5(cache_key).hexdigest()
+
         value = cache.get(cache_key)
         if value is None:
+            print "CACHE MISS FOR %s" % cache_key
+
+            # The outermost tag is responsible for calling cache_meta. Mark it
+            # if not marked yet.
+            outer = False
+            if not hasattr(request, "_ultracache_outer_node"):
+                setattr(request, "_ultracache_outer_node", True)
+                outer = True
+
             value = self.nodelist.render(context)
+
+            # Keep track of which variables belong to this tag
+            #print "NORMAL ADD CACHE_KEY_RANGE"
+            #print (start_index, len(request._ultracache), cache_key)
+            request._ultracache_cache_key_range.append(
+                (start_index, len(request._ultracache), cache_key)
+            )
+
+            if cache_key == "163232e2f0f92da1c20e6c2f2d1b70fc":
+                print "SET %s" % value
             cache.set(cache_key, value, expire_time)
-            cache_meta(request, cache_key, start_index)
+
+            # Finally call cache meta if we are the outer tag
+            if outer and not hasattr(self.__class__, "__multiprocess_safe__"):
+                cache_meta(request)
+
         else:
+            print "CACHE HIT FOR %s" % cache_key
+
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
             for tu in cache.get(cache_key + "-objs", []):
+                #print "IN CACHE MISS ADD %s" % str(tu)
                 request._ultracache.append(tu)
 
         return value
