@@ -96,7 +96,7 @@ class TemplateTagsTestCase(TestCase):
         result2 = t.render(context)
         self.failUnlessEqual(result1, result2)
 
-    def xtest_context_without_request(self):
+    def test_context_without_request(self):
         t = template.Template("{%% load ultracache_tags %%}\
             {%% ultracache 1200 'test_ultracache_undefined' aaa %%}%s{%% endultracache %%}" % self.first_site.id
         )

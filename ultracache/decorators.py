@@ -93,7 +93,6 @@ def cached_get(timeout, *params):
 
                     # Call cache meta because this view is effectively the
                     # outer tag.
-                    print "DECORATOR CACHE_META"
                     cache_meta(request)
 
             else:

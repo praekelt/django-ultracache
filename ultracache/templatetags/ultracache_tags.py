@@ -17,33 +17,38 @@ from ultracache.utils import cache_meta, get_current_site_pk
 register = template.Library()
 
 
-def callback(request, process_request, last=False):
+def after_render(node, context):
+    # Return sub-process data for use in callback
+    request = context.get("request", {})
+    return {
+        "_ultracache": getattr(request, "_ultracache", []),
+        "_ultracache_cache_key_range": getattr(
+            request, "_ultracache_cache_key_range", []
+        )
+    }
+
+
+def callback(request, data, last=False):
+    # Update the request with sub-process data
     if not hasattr(request, "_ultracache"):
         setattr(request, "_ultracache", [])
         setattr(request, "_ultracache_cache_key_range", [])
 
-    print "CALLBACK"
-    #print process_request
-    #print "CALLBACK 'REQUEST'"
-    #print process_request
-    #print "xxxxxxxxxxxxxxx"
-    #import pdb;pdb.set_trace()
-
     start_index = len(request._ultracache)
-    request._ultracache.extend(process_request["_ultracache"])
-    #request._ultracache_cache_key_range.extend(process_request["_ultracache_cache_key_range"])
-
-    for tu in process_request["_ultracache_cache_key_range"]:
+    request._ultracache.extend(data["_ultracache"])
+    for tu in data["_ultracache_cache_key_range"]:
         request._ultracache_cache_key_range.append(
             (tu[0] + start_index, tu[1] + start_index, tu[2])
         )
 
     if last:
-        #print "CALLBACK CACHE_META"
         cache_meta(request)
 
 
-@multiprocess("ultracache.templatetags.ultracache_tags.callback")
+@multiprocess(
+    after_render=after_render,
+    callback=callback
+)
 class UltraCacheNode(CacheNode):
     """Based on Django's default cache template tag. Add SITE_ID as implicit
     vary on parameter is sites product is installed. Allow unresolvable
@@ -107,8 +112,6 @@ class UltraCacheNode(CacheNode):
 
         value = cache.get(cache_key)
         if value is None:
-            print "CACHE MISS FOR %s" % cache_key
-
             # The outermost tag is responsible for calling cache_meta. Mark it
             # if not marked yet.
             outer = False
@@ -119,14 +122,10 @@ class UltraCacheNode(CacheNode):
             value = self.nodelist.render(context)
 
             # Keep track of which variables belong to this tag
-            #print "NORMAL ADD CACHE_KEY_RANGE"
-            #print (start_index, len(request._ultracache), cache_key)
             request._ultracache_cache_key_range.append(
                 (start_index, len(request._ultracache), cache_key)
             )
 
-            if cache_key == "163232e2f0f92da1c20e6c2f2d1b70fc":
-                print "SET %s" % value
             cache.set(cache_key, value, expire_time)
 
             # Finally call cache meta if we are the outer tag
@@ -134,12 +133,9 @@ class UltraCacheNode(CacheNode):
                 cache_meta(request)
 
         else:
-            print "CACHE HIT FOR %s" % cache_key
-
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
             for tu in cache.get(cache_key + "-objs", []):
-                #print "IN CACHE MISS ADD %s" % str(tu)
                 request._ultracache.append(tu)
 
         return value
