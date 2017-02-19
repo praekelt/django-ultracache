@@ -40,9 +40,9 @@ def cache_meta(request):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
-    #print "CACHE META"
-    #print request._ultracache
-    #print request._ultracache_cache_key_range
+    print "CACHE META"
+    print request._ultracache
+    print request._ultracache_cache_key_range
     path = request.get_full_path()
 
     # List and a dictionary needed for one cache.delete_many and one
@@ -193,7 +193,7 @@ def cache_meta(request):
     # Deletion must happen first because set may set some of these keys
     if all_to_delete:
         if "163232e2f0f92da1c20e6c2f2d1b70fc" in all_to_delete:
-            print "DELETE"
+            print "DELETE a"
         try:
             cache.delete_many(all_to_delete)
         except NotImplementedError:

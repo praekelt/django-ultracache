@@ -22,24 +22,24 @@ def callback(request, process_request, last=False):
         setattr(request, "_ultracache", [])
         setattr(request, "_ultracache_cache_key_range", [])
 
+    print "CALLBACK"
     #print process_request
     #print "CALLBACK 'REQUEST'"
     #print process_request
     #print "xxxxxxxxxxxxxxx"
-    request._ultracache.extend(process_request["_ultracache"])
-    request._ultracache_cache_key_range.extend(process_request["_ultracache_cache_key_range"])
-    
-    '''
-    start_index = len(request._ultracache)
-    for tu in process_request["_ultracache_cache_key_range"]:
-        #print "CALLBACK ADD CACHE_KEY_RANGE"
-        #print (tu[0], tu[1], tu[2])
+    #import pdb;pdb.set_trace()
 
+    start_index = len(request._ultracache)
+    request._ultracache.extend(process_request["_ultracache"])
+    #request._ultracache_cache_key_range.extend(process_request["_ultracache_cache_key_range"])
+
+    for tu in process_request["_ultracache_cache_key_range"]:
         request._ultracache_cache_key_range.append(
-            (tu[0], tu[1], tu[2])
+            (tu[0] + start_index, tu[1] + start_index, tu[2])
         )
-    '''
+
     if last:
+        #print "CALLBACK CACHE_META"
         cache_meta(request)
 
 
