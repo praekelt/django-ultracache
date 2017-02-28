@@ -56,3 +56,5 @@ ULTRACACHE = {
     "purge": {"method": "ultracache.tests.utils.dummy_purger"},
     "drf": {"viewsets": {"*": {}}}
 }
+
+TEMPLATE_MULTIPROCESSING = {"enabled": True}

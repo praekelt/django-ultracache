@@ -139,8 +139,8 @@ class UltraCacheNode(CacheNode):
 
             cache.set(cache_key, value, expire_time)
 
-            # Finally call cache meta if we are the outer tag
-            if outer and not hasattr(self.__class__, "__multiprocess_safe__"):
+            # Finally call cache meta if we are the outer tag if applicable
+            if outer and not context.get("__multiprocess_in_progress", False):
                 cache_meta(request)
 
         else:
