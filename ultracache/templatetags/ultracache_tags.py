@@ -1,4 +1,5 @@
 import hashlib
+import random
 
 from django import template
 from django.utils.translation import ugettext as _
@@ -15,6 +16,15 @@ from ultracache.utils import cache_meta, get_current_site_pk
 
 
 register = template.Library()
+
+
+def predicate(node, context):
+    # We need a working shared cache for multiprocessing to work
+    # todo: test for a shared cache. Memcache is shared but it's not the only
+    # one, so can't hardcode the test.
+    key = "uc-pred-%s" % random.randint(1, 1000000)
+    cache.set(key, 1, 10)
+    return cache.get(key) == 1
 
 
 def after_render(node, context):
@@ -46,6 +56,7 @@ def callback(request, data, last=False):
 
 
 @multiprocess(
+    predicate=predicate,
     after_render=after_render,
     callback=callback
 )
