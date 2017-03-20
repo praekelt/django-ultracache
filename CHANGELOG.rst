@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Reduce number of set_many calls to one per request.
+
 1.10.2
 ------
 #. Remove logic that depends on SITE_ID so site can also be inferred from the request.
