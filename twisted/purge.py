@@ -1,6 +1,8 @@
 """Monitor service to consume RabbitMQ messages. This twisted plugin typically
 runs on each node that runs nginx."""
 
+import traceback
+
 import pika
 import treq
 import yaml
@@ -69,13 +71,13 @@ class PurgeService(service.Service):
                     response = yield treq.request(
                         "PURGE", "http://" \
                             + self.config.get("nginx-host", "127.0.0.1") + path,
-                        #cookies={"foo": "bar"},
+                        #cookies={"foo": "bar"}, todo add to config
                         headers={"Host": self.config.get("domain", "actual.host.com")},
                         timeout=10
                     )
-                except (ConnectError, DNSLookupError, CancelledError, ResponseFailed):
-                    # Maybe better to do a blank except?
-                    self.log("Error purging %s" % path)
+                except Exception as exception:
+                    msg = traceback.format_exc()
+                    self.log("Error purging %s: %s" % (path, msg))
                 else:
                     content = yield response.content()
 
