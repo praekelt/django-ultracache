@@ -22,6 +22,16 @@ class PurgeService(service.Service):
             self.config = yaml.load(open(config_file))
         return super(PurgeService, self).__init__(*args, **kwargs)
 
+    def log(self, msg):
+        name = self.config.get("logfile", None)
+        if not name:
+            return
+        fp = open(name, "a")
+        try:
+            fp.write(msg + "\n")
+        finally:
+            fp.close()
+
     def connect(self):
         parameters = pika.ConnectionParameters()
         cc = protocol.ClientCreator(
@@ -54,7 +64,7 @@ class PurgeService(service.Service):
             ch, method, properties, body = thing
             if body:
                 path = body
-                print "PURGE %s" % path
+                self.log("Purging %s" % path)
                 try:
                     response = yield treq.request(
                         "PURGE", "http://" \
@@ -65,11 +75,9 @@ class PurgeService(service.Service):
                     )
                 except (ConnectError, DNSLookupError, CancelledError, ResponseFailed):
                     # Maybe better to do a blank except?
-                    print "ERROR %s" % path
+                    self.log("Error purging %s" % path)
                 else:
-                    print "RESULT %s" % path
                     content = yield response.content()
-                    print content
 
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
 

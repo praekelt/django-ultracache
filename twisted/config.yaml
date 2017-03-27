@@ -1,2 +1,3 @@
 rabbit-host: 172.30.45.146
 domain: my.site.com
+logfile: /tmp/purge.log
