@@ -1,5 +1,3 @@
-import hashlib
-
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.functional import Promise
@@ -53,7 +51,6 @@ class UltraCacheNode(CacheNode):
         # objects.
         if not hasattr(request, "_ultracache"):
             setattr(request, "_ultracache", [])
-            setattr(request, "_ultracache_cache_key_range", [])
             start_index = 0
         else:
             start_index = len(request._ultracache)
@@ -71,34 +68,12 @@ class UltraCacheNode(CacheNode):
                 r = unicode(r)
             vary_on.append(r)
 
-        # Compute a cache key. In non-debug we want it down to the minimum.
         cache_key = make_template_fragment_key(self.fragment_name, vary_on)
-        if not settings.DEBUG:
-            cache_key = hashlib.md5(cache_key).hexdigest()
-
         value = cache.get(cache_key)
         if value is None:
-
-            # The outermost tag is responsible for calling cache_meta. Mark it
-            # if not marked yet.
-            outer = False
-            if not hasattr(request, "_ultracache_outer_node"):
-                setattr(request, "_ultracache_outer_node", True)
-                outer = True
-
             value = self.nodelist.render(context)
-
-            # Keep track of which variables belong to this tag
-            request._ultracache_cache_key_range.append(
-                (start_index, len(request._ultracache), cache_key)
-            )
-
             cache.set(cache_key, value, expire_time)
-
-            # Finally call cache meta if we are the outer tag
-            if outer:
-                cache_meta(request)
-
+            cache_meta(request, cache_key, start_index)
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.

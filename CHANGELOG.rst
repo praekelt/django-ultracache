@@ -3,7 +3,6 @@ Changelog
 
 next
 ----
-#. Reduce number of set_many calls to one per request.
 #. Introduce `rabbitmq-url` setting for use by `broadcast_purge` task.
 
 1.10.2

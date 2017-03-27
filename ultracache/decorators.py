@@ -66,35 +66,19 @@ def cached_get(timeout, *params):
             cache_key = "ucache-get-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:
-
-                # The get view as outermost caller may set state variables
+                # The get view as outermost caller may bluntly set _ultracache
                 request._ultracache = []
-                request._ultracache_cache_key_range = []
-                request._ultracache_outer_node = True
-
-                # Call the view
                 response = view_func(view_or_request, *args, **kwargs)
                 content = getattr(response, "rendered_content", None) \
                     or getattr(response, "content", None)
-
                 if content is not None:
-
-                    # Keep track of which variables belong to this view
-                    request._ultracache_cache_key_range.append(
-                        (0, len(request._ultracache), cache_key)
-                    )
-
                     headers = getattr(response, "_headers", {})
                     cache.set(
                         cache_key,
                         {"content": content, "headers": headers},
                         timeout
                     )
-
-                    # Call cache meta because this view is effectively the
-                    # outer tag.
-                    cache_meta(request)
-
+                    cache_meta(request, cache_key)
             else:
                 response = HttpResponse(cached["content"])
                 # Headers has a non-obvious format

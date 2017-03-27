@@ -159,10 +159,8 @@ def drf_decorator(func):
                 ct = ContentType.objects.get_for_model(obj.__class__)
                 request._ultracache.append((ct.id, obj.pk))
 
-            request._ultracache_cache_key_range.append(
-                (0, len(request._ultracache), cache_key)
-            )
-            cache_meta(request)
+            cache_meta(request, cache_key)
+
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
             evaluate = viewset_settings.get("timeout", 300)
