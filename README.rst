@@ -137,6 +137,8 @@ You can create custom reverse caching proxy purgers. See ``purgers.py`` for exam
         "purge": {"method": "myproduct.purgers.squid"}
     }
 
+todo: explain settings and the twisted service.
+
 Other settings
 **************
 

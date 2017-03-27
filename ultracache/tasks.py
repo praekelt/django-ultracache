@@ -14,14 +14,19 @@ from django.conf import settings
 if DO_TASK:
     @shared_task(max_retries=3, ignore_result=True)
     def broadcast_purge(path):
-
-        # Use same host as celery. Pika requires the path to be url encoded.
-        parsed = urlparse.urlparse(settings.CELERY_BROKER_URL)
-        url = "%s://%s/%s" % (
-            parsed.scheme,
-            parsed.netloc,
-            urllib.quote(parsed.path[1:], safe="")
-        )
+        try:
+            url = settings.ULTRACACHE["rabbitmq-url"]
+        except (AttributeError, KeyError):
+            # Use same host as celery. Pika requires the path to be url
+            # encoded. A typical broker URL setting remains effectively
+            # unchanged but as soon as sub-paths are encountered this encoding
+            # becomes necessary.
+            parsed = urlparse.urlparse(settings.CELERY_BROKER_URL)
+            url = "%s://%s/%s" % (
+                parsed.scheme,
+                parsed.netloc,
+                urllib.quote(parsed.path[1:], safe="")
+            )
         connection = pika.BlockingConnection(pika.URLParameters(url))
         channel = connection.channel()
         channel.exchange_declare(exchange="purgatory", type="fanout")
