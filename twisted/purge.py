@@ -1,5 +1,5 @@
 """Monitor service to consume RabbitMQ messages. This twisted plugin typically
-runs on each node that runs nginx."""
+runs on each node that runs a reverse caching proxy like Nginx or Varnish."""
 
 import traceback
 
@@ -67,14 +67,21 @@ class PurgeService(service.Service):
             if body:
                 path = body
                 self.log("Purging %s" % path)
+                domain = self.config.get("domain", None)
                 try:
-                    response = yield treq.request(
-                        "PURGE", "http://" \
-                            + self.config.get("nginx-host", "127.0.0.1") + path,
-                        #cookies={"foo": "bar"}, todo add to config
-                        headers={"Host": self.config.get("domain", "actual.host.com")},
-                        timeout=10
-                    )
+                    if domain:
+                        response = yield treq.request(
+                            "PURGE", "http://" \
+                                + self.config.get("reverse-address", "127.0.0.1") + path,
+                            headers={"Host": domain},
+                            timeout=10
+                        )
+                    else:
+                        response = yield treq.request(
+                            "PURGE", "http://" \
+                                + self.config.get("reverse-address", "127.0.0.1") + path,
+                            timeout=10
+                        )
                 except Exception as exception:
                     msg = traceback.format_exc()
                     self.log("Error purging %s: %s" % (path, msg))
