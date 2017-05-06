@@ -147,6 +147,7 @@ def drf_decorator(func):
         if do_cache:
             if not hasattr(request, "_ultracache"):
                 setattr(request, "_ultracache", [])
+                setattr(request, "_ultracache_cache_key_range", [])
 
             try:
                 iter(obj_or_queryset)
@@ -159,6 +160,7 @@ def drf_decorator(func):
                 request._ultracache.append((ct.id, obj.pk))
 
             cache_meta(request, cache_key)
+
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
             evaluate = viewset_settings.get("timeout", 300)

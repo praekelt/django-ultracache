@@ -1,10 +1,11 @@
 """Monitor service to consume RabbitMQ messages. This twisted plugin typically
-runs on each node that runs nginx.
+runs on each node that runs a reverse caching proxy like Nginx or Varnish."""
 
-You must edit process_queue to suit your needs."""
+import traceback
 
-import treq
 import pika
+import treq
+import yaml
 from pika.adapters import twisted_connection
 from twisted.application import service
 from twisted.internet import defer, reactor, protocol
@@ -13,14 +14,34 @@ from twisted.internet.error import ConnectError, DNSLookupError
 from twisted.web.client import ResponseFailed
 
 
-class MonitorService(service.Service):
+class PurgeService(service.Service):
     """Receive and pass on messages from a RabbitMQ exchange"""
+
+    def __init__(self, options, *args, **kwargs):
+        config_file = options.get("config")
+        self.config = {}
+        if config_file:
+            self.config = yaml.load(open(config_file))
+        return super(PurgeService, self).__init__(*args, **kwargs)
+
+    def log(self, msg):
+        name = self.config.get("logfile", None)
+        if not name:
+            return
+        fp = open(name, "a")
+        try:
+            fp.write(msg + "\n")
+        finally:
+            fp.close()
 
     def connect(self):
         parameters = pika.ConnectionParameters()
         cc = protocol.ClientCreator(
             reactor, twisted_connection.TwistedProtocolConnection, parameters)
-        d = cc.connectTCP("localhost", 5672)
+        d = cc.connectTCP(
+            self.config.get("rabbit-host", "localhost"),
+            self.config.get("rabbit-port", 5672)
+        )
         d.addCallback(lambda protocol: protocol.ready)
         d.addCallback(self.setup_connection)
         return d
@@ -45,21 +66,27 @@ class MonitorService(service.Service):
             ch, method, properties, body = thing
             if body:
                 path = body
-                print "PURGE %s %s" % (ua_map, path)
+                self.log("Purging %s" % path)
+                domain = self.config.get("domain", None)
                 try:
-                    response = yield treq.request(
-                        "PURGE", "http://127.0.0.1" + path,
-                        cookies={"foo": "bar"},
-                        headers={"Host": "actual.host.com"},
-                        timeout=10
-                    )
-                except (ConnectError, DNSLookupError, CancelledError, ResponseFailed):
-                    # Maybe better to do a blank except?
-                    print "ERROR %s %s" (ua_map, path)
+                    if domain:
+                        response = yield treq.request(
+                            "PURGE", "http://" \
+                                + self.config.get("reverse-address", "127.0.0.1") + path,
+                            headers={"Host": domain},
+                            timeout=10
+                        )
+                    else:
+                        response = yield treq.request(
+                            "PURGE", "http://" \
+                                + self.config.get("reverse-address", "127.0.0.1") + path,
+                            timeout=10
+                        )
+                except Exception as exception:
+                    msg = traceback.format_exc()
+                    self.log("Error purging %s: %s" % (path, msg))
                 else:
-                    print "RESULT %s %s" % (ua_map, path)
                     content = yield response.content()
-                    print content
 
             yield ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -79,5 +106,5 @@ class MonitorService(service.Service):
         self.running = 0
 
 
-def makeService():
-    return MonitorService()
+def makeService(options):
+    return PurgeService(options)

@@ -24,6 +24,15 @@ def nginx(path):
     except requests.exceptions.RequestException:
         pass
 
+
+def broadcast(path):
+    # The preferred way requires RabbitMQ and celery being installed and
+    # configured.
+    from ultracache.tasks import broadcast_purge
+    broadcast_purge.delay(path)
+
+
+def nginx_more_examples(path):
     # More nodes
     for host in ("196.1.2.3", "196.1.2.4"):
         loc = "http://%s%s" % (host, path)
@@ -47,4 +56,3 @@ def nginx(path):
         body=path
     )
     connection.close()
-

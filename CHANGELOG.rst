@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.11.0
+------
+#. Introduce `rabbitmq-url` setting for use by `broadcast_purge` task.
+#. Django 1.11 support.
+#. Deprecate Django 1.6 support.
+
 1.10.2
 ------
 #. Remove logic that depends on SITE_ID so site can also be inferred from the request.

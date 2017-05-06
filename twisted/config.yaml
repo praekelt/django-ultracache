@@ -1,0 +1,17 @@
+# The RabbitMQ host. Defaults to localhost. Optional.
+#rabbit-host: localhost
+
+# The RabbitMQ port. Defaults to 5672. Optional.
+#rabbit-port: 5672
+
+# Reverse cache address. May be a domain name, IP address and also a port. Defaults
+# to localhost. Optional.
+#reverse-address: localhost
+
+# If reverse cache handles multiple domains then reverse-address is typically
+# localhost. Setting the domain sends an extra header identifying the correct
+# site. Optional.
+#domain: my.site.com
+
+# Debug logging. This can be expensive.
+#logfile: /tmp/purge.log
