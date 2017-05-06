@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.11.0
+------
 #. Introduce `rabbitmq-url` setting for use by `broadcast_purge` task.
 #. Django 1.11 support.
 #. Deprecate Django 1.6 support.
