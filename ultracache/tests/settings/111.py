@@ -13,6 +13,7 @@ DATABASES = {
 ROOT_URLCONF = "ultracache.tests.urls"
 
 INSTALLED_APPS = (
+    "test_without_migrations",
     "ultracache",
     # Include tests because it declares models
     "ultracache.tests",
@@ -21,7 +22,6 @@ INSTALLED_APPS = (
     "django.contrib.sessions",
     "django.contrib.sites",
     "rest_framework"
-
 )
 
 CACHES = {
@@ -30,15 +30,24 @@ CACHES = {
     }
 }
 
-SITE_ID = 1
-
 SECRET_KEY = "SECRET_KEY"
 
 TEMPLATE_DIRS = (os.path.realpath(os.path.dirname(__file__)) + "/ultracache/tests/templates/",)
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.core.context_processors.request",
-)
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": False,
+        "OPTIONS": {
+            "context_processors": ["django.template.context_processors.request"],
+            "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ]
+        },
+    },
+]
 
 ULTRACACHE = {
     "purge": {"method": "ultracache.tests.utils.dummy_purger"},
