@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.db.migrations.recorder import MigrationRecorder
 from django.db.models import Model
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -29,6 +30,8 @@ def on_post_save(sender, **kwargs):
     if not invalidate:
         return
     if kwargs.get("raw", False):
+        return
+    if sender is MigrationRecorder.Migration:
         return
     if issubclass(sender, Model):
         obj = kwargs["instance"]
@@ -86,6 +89,10 @@ def on_post_delete(sender, **kwargs):
     """Expire ultracache cache keys affected by this object
     """
     if not invalidate:
+        return
+    if kwargs.get("raw", False):
+        return
+    if sender is MigrationRecorder.Migration:
         return
     if issubclass(sender, Model):
         obj = kwargs["instance"]

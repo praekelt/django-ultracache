@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.11.1
+------
+#. More defensive code to ensure we don't interfere during migrations in a test run.
+
 1.11.0
 ------
 #. Introduce `rabbitmq-url` setting for use by `broadcast_purge` task.
