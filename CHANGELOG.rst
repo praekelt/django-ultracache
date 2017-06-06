@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.11.2
+------
+#. Package the product properly so all directories are included.
+
 1.11.1
 ------
 #. More defensive code to ensure we don't interfere during migrations in a test run.
