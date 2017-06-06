@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.11.3
+------
+#. Move the twisted directory one lower.
+
 1.11.2
 ------
 #. Package the product properly so all directories are included.
