@@ -1,6 +1,11 @@
 Changelog
 =========
 
+next
+----
+#. Move the twisted work to `django-ultracache-twisted`.
+#. Clearly raise exception if libraries are not found.
+
 1.11.3
 ------
 #. Move the twisted directory one lower.
