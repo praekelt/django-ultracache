@@ -11,29 +11,31 @@ except ImportError:
 from django.conf import settings
 
 
-if DO_TASK:
-    @shared_task(max_retries=3, ignore_result=True)
-    def broadcast_purge(path):
-        try:
-            url = settings.ULTRACACHE["rabbitmq-url"]
-        except (AttributeError, KeyError):
-            # Use same host as celery. Pika requires the path to be url
-            # encoded. A typical broker URL setting remains effectively
-            # unchanged but as soon as sub-paths are encountered this encoding
-            # becomes necessary.
-            parsed = urlparse.urlparse(settings.CELERY_BROKER_URL)
-            url = "%s://%s/%s" % (
-                parsed.scheme,
-                parsed.netloc,
-                urllib.quote(parsed.path[1:], safe="")
-            )
-        connection = pika.BlockingConnection(pika.URLParameters(url))
-        channel = connection.channel()
-        channel.exchange_declare(exchange="purgatory", type="fanout")
-        channel.basic_publish(
-            exchange="purgatory",
-            routing_key="",
-            body=path
+@shared_task(max_retries=3, ignore_result=True)
+def broadcast_purge(path):
+    if not DO_TASK:
+        raise RuntimeError("Libraries celery and/ or pika not found")
+
+    try:
+        url = settings.ULTRACACHE["rabbitmq-url"]
+    except (AttributeError, KeyError):
+        # Use same host as celery. Pika requires the path to be url
+        # encoded. A typical broker URL setting remains effectively
+        # unchanged but as soon as sub-paths are encountered this encoding
+        # becomes necessary.
+        parsed = urlparse.urlparse(settings.CELERY_BROKER_URL)
+        url = "%s://%s/%s" % (
+            parsed.scheme,
+            parsed.netloc,
+            urllib.quote(parsed.path[1:], safe="")
         )
-        connection.close()
-        return True
+    connection = pika.BlockingConnection(pika.URLParameters(url))
+    channel = connection.channel()
+    channel.exchange_declare(exchange="purgatory", type="fanout")
+    channel.basic_publish(
+        exchange="purgatory",
+        routing_key="",
+        body=path
+    )
+    connection.close()
+    return True
