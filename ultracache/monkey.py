@@ -108,7 +108,6 @@ def _my_resolve_lookup(self, context):
 Variable._resolve_lookup = _my_resolve_lookup
 
 
-
 """If Django Rest Framework is installed patch a few mixins. Serializers are
 conceptually the same as templates but make it even easier to track objects."""
 try:
@@ -123,7 +122,7 @@ def drf_decorator(func):
 
     def wrapped(context, request, *args, **kwargs):
         viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
-        do_cache =  (context.__class__ in viewsets) or ("*" in viewsets)
+        do_cache = (context.__class__ in viewsets) or ("*" in viewsets)
 
         if do_cache:
             li = [request.get_full_path()]
