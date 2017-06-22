@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.11.5
+------
+#. Django Rest Framework caching does not cache the entire response anymore, only the data and headers.
+
 1.11.4
 ------
 #. Move the twisted work to `django-ultracache-twisted`.

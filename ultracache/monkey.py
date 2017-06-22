@@ -3,6 +3,7 @@ are covered within a containing caching template tag. The patch is based on
 Django 1.9 but is backwards compatible with 1.6."""
 
 import inspect
+import json
 import md5
 import types
 from collections import OrderedDict
@@ -138,9 +139,15 @@ def drf_decorator(func):
 
             cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
 
-            cached_response = cache.get(cache_key, None)
-            if cached_response is not None:
-                return cached_response
+            cached = cache.get(cache_key, None)
+            if cached is not None:
+                response = Response(json.loads(cached["content"]))
+
+                # Headers has a non-obvious format
+                for k, v in cached["headers"].items():
+                    response[v[0]] = v[1]
+
+                return response
 
         obj_or_queryset, response = func(context, request, *args, **kwargs)
 
@@ -163,8 +170,13 @@ def drf_decorator(func):
 
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
-            evaluate = viewset_settings.get("timeout", 300)
-            cache.set(cache_key, response, 300)
+            timeout = viewset_settings.get("timeout", 300)
+            headers = getattr(response, "_headers", {})
+            cache.set(
+                cache_key,
+                {"content": response.content, "headers": headers},
+                timeout
+            )
             return response
 
         else:
