@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.11.6
+------
 #. Adjust the DRF decorator so it can be used in more places.
 
 1.11.5
