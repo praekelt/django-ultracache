@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Adjust the DRF decorator so it can be used in more places.
+
 1.11.5
 ------
 #. Django Rest Framework caching does not cache the entire response anymore, only the data and headers.
