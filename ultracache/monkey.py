@@ -174,7 +174,7 @@ def drf_decorator(func):
             headers = getattr(response, "_headers", {})
             cache.set(
                 cache_key,
-                {"content": response.content, "headers": headers},
+                {"content": json.dumps(response.data), "headers": headers},
                 timeout
             )
             return response
