@@ -3,8 +3,8 @@ are covered within a containing caching template tag. The patch is based on
 Django 1.9 but is backwards compatible with 1.6."""
 
 import inspect
-import json
 import md5
+import pickle
 import types
 from collections import OrderedDict
 
@@ -141,7 +141,7 @@ def drf_decorator(func):
 
             cached = cache.get(cache_key, None)
             if cached is not None:
-                response = Response(json.loads(cached["content"]))
+                response = Response(pickle.loads(cached["content"]))
 
                 # Headers has a non-obvious format
                 for k, v in cached["headers"].items():
@@ -174,7 +174,7 @@ def drf_decorator(func):
             headers = getattr(response, "_headers", {})
             cache.set(
                 cache_key,
-                {"content": json.dumps(response.data), "headers": headers},
+                {"content": pickle.dumps(response.data), "headers": headers},
                 timeout
             )
             return response
