@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.11.7
+------
 #. Use pickle to cache DRF data because DRF uses a Decimal type that isn't recognized by Python's json library.
 
 1.11.6
