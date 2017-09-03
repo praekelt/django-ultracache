@@ -4,6 +4,7 @@ Changelog
 next
 ----
 #. The DRF settings now accept dotted names.
+#. The DRF setting now accepts a callable whose result forms part of the cache key.
 
 1.11.7
 ------

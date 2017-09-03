@@ -134,7 +134,10 @@ def drf_decorator(func):
                 or viewsets.get("*", {})
             evaluate = viewset_settings.get("evaluate", None)
             if evaluate is not None:
-                li.append(eval(evaluate))
+                if callable(evaluate):
+                    li.append(evaluate(context, request))
+                else:
+                    li.append(eval(evaluate))
 
             if "django.contrib.sites" in settings.INSTALLED_APPS:
                 li.append(get_current_site_pk(request))

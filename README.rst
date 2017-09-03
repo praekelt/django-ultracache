@@ -134,6 +134,16 @@ Cache ``list`` and ``retrieve`` actions on viewsets::
 
     }
 
+    # Evaluate code to append to the cache key via a callable.
+    def mycallable(viewset, request):
+        if viewset.__class__.__name__ == "foo":
+            return request.user.id
+
+    ULTRACACHE = {
+        "drf": {"viewsets": {"*": {"evaluate": mycallable}}}
+
+    }
+
 Purgers
 *******
 
