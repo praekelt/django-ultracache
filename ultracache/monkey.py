@@ -124,11 +124,13 @@ def drf_decorator(func):
 
     def wrapped(context, request, *args, **kwargs):
         viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
-        do_cache =  (context.__class__ in viewsets) or ("*" in viewsets)
+        dotted_name =  context.__module__ + "." + context.__class__.__name__
+        do_cache = (dotted_name in viewsets) or (context.__class__ in viewsets) or ("*" in viewsets)
 
         if do_cache:
             li = [request.get_full_path()]
-            viewset_settings = viewsets.get(context.__class__, {}) \
+            viewset_settings = viewsets.get(dotted_name, {}) \
+                or viewsets.get(context.__class__, {}) \
                 or viewsets.get("*", {})
             evaluate = viewset_settings.get("evaluate", None)
             if evaluate is not None:

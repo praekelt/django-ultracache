@@ -109,7 +109,13 @@ Cache ``list`` and ``retrieve`` actions on viewsets::
 
     }
 
-    # Cache a specific viewset
+    # Cache a specific viewset by name
+    ULTRACACHE = {
+        "drf": {"viewsets": {"my.app.MyViewset": {}}}
+
+    }
+
+    # Cache a specific viewset by class
     ULTRACACHE = {
         "drf": {"viewsets": {MyViewset: {}}}
 
