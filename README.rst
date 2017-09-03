@@ -109,7 +109,13 @@ Cache ``list`` and ``retrieve`` actions on viewsets::
 
     }
 
-    # Cache a specific viewset
+    # Cache a specific viewset by name
+    ULTRACACHE = {
+        "drf": {"viewsets": {"my.app.MyViewset": {}}}
+
+    }
+
+    # Cache a specific viewset by class
     ULTRACACHE = {
         "drf": {"viewsets": {MyViewset: {}}}
 
@@ -125,6 +131,16 @@ Cache ``list`` and ``retrieve`` actions on viewsets::
     # depending on whether the user is logged in or not.
     ULTRACACHE = {
         "drf": {"viewsets": {"*": {"evaluate": "request.user.is_anonymous"}}}
+
+    }
+
+    # Evaluate code to append to the cache key via a callable.
+    def mycallable(viewset, request):
+        if viewset.__class__.__name__ == "foo":
+            return request.user.id
+
+    ULTRACACHE = {
+        "drf": {"viewsets": {"*": {"evaluate": mycallable}}}
 
     }
 

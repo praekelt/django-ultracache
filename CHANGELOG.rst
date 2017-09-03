@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.11.8
+------
+#. The DRF settings now accept dotted names.
+#. The DRF setting now accepts a callable whose result forms part of the cache key.
+
 1.11.7
 ------
 #. Use pickle to cache DRF data because DRF uses a Decimal type that isn't recognized by Python's json library.
