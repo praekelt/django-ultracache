@@ -123,7 +123,7 @@ except ImportError:
 def drf_decorator(func):
 
     def wrapped(context, request, *args, **kwargs):
-        viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
+        viewsets = getattr(settings, "ULTRACACHE", {}).get("drf", {}).get("viewsets", {})
         dotted_name =  context.__module__ + "." + context.__class__.__name__
         do_cache = (dotted_name in viewsets) or (context.__class__ in viewsets) or ("*" in viewsets)
 
