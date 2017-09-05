@@ -153,7 +153,7 @@ You can create custom reverse caching proxy purgers. See ``purgers.py`` for exam
         "purge": {"method": "myproduct.purgers.squid"}
     }
 
-todo: explain settings and the twisted service.
+todo: explain settings and the twisted service. Note strict version pin on pika==0.10.0.
 
 Other settings
 **************
