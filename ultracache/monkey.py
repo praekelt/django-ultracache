@@ -185,7 +185,7 @@ def _serializer(func):
 
     def wrapped(context, instance):
         request = context.context["request"]
-        if hasattr(request, "_ultracache"):
+        if hasattr(request, "_ultracache") and isinstance(instance, Model):
             ct = ContentType.objects.get_for_model(instance.__class__)
             request._ultracache.append((ct.id, instance.pk))
         return func(context, instance)
@@ -201,8 +201,9 @@ def _listserializer(func):
         if hasattr(request, "_ultracache"):
             iterable = data.all() if isinstance(data, Manager) else data
             for obj in iterable:
-                ct = ContentType.objects.get_for_model(obj.__class__)
-                request._ultracache.append((ct.id, obj.pk))
+                if isinstance(obj, Model):
+                    ct = ContentType.objects.get_for_model(obj.__class__)
+                    request._ultracache.append((ct.id, obj.pk))
         return func(context, data)
 
     return wrapped
