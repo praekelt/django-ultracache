@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+1.11.9
+------
 #. Simplify the DRF caching implementation. It also now considers objects touched by sub-serializers.
 
 1.11.8
