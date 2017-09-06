@@ -9,7 +9,7 @@ import types
 from collections import OrderedDict
 
 from django.core.cache import cache
-from django.db.models import Model
+from django.db.models import Model, Manager
 from django.template.base import Variable, VariableDoesNotExist
 from django.template.context import BaseContext
 from django.contrib.contenttypes.models import ContentType
@@ -115,12 +115,13 @@ conceptually the same as templates but make it even easier to track objects."""
 try:
     from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
     from rest_framework.response import Response
+    from rest_framework.serializers import Serializer, ListSerializer
     HAS_DRF = True
 except ImportError:
     HAS_DRF = False
 
 
-def drf_decorator(func):
+def drf_cache(func):
 
     def wrapped(context, request, *args, **kwargs):
         viewsets = settings.ULTRACACHE.get("drf", {}).get("viewsets", {})
@@ -154,25 +155,14 @@ def drf_decorator(func):
 
                 return response
 
-        obj_or_queryset, response = func(context, request, *args, **kwargs)
+        if not hasattr(request, "_ultracache"):
+            setattr(request, "_ultracache", [])
+            setattr(request, "_ultracache_cache_key_range", [])
+
+        response = func(context, request, *args, **kwargs)
 
         if do_cache:
-            if not hasattr(request, "_ultracache"):
-                setattr(request, "_ultracache", [])
-                setattr(request, "_ultracache_cache_key_range", [])
-
-            try:
-                iter(obj_or_queryset)
-            except TypeError:
-                obj_or_queryset = [obj_or_queryset]
-
-            for obj in obj_or_queryset:
-                # get_for_model itself is cached
-                ct = ContentType.objects.get_for_model(obj.__class__)
-                request._ultracache.append((ct.id, obj.pk))
-
             cache_meta(request, cache_key)
-
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
             timeout = viewset_settings.get("timeout", 300)
@@ -190,32 +180,37 @@ def drf_decorator(func):
     return wrapped
 
 
-def mylist(self, request, *args, **kwargs):
-    queryset = self.filter_queryset(self.get_queryset())
+def _serializer(func):
+    # Helper decorator for Serializer
 
-    page = self.paginate_queryset(queryset)
-    if page is not None:
-        consider = page
-        serializer = self.get_serializer(page, many=True)
-        response = self.get_paginated_response(serializer.data)
-    else:
-        consider = queryset
-        serializer = self.get_serializer(queryset, many=True)
-        response = Response(serializer.data)
+    def wrapped(context, instance):
+        request = context.context["request"]
+        if hasattr(request, "_ultracache") and isinstance(instance, Model):
+            ct = ContentType.objects.get_for_model(instance.__class__)
+            request._ultracache.append((ct.id, instance.pk))
+        return func(context, instance)
 
-    return consider, response
-
-mylist = drf_decorator(mylist)
+    return wrapped
 
 
-def myretrieve(self, request, *args, **kwargs):
-    instance = self.get_object()
-    serializer = self.get_serializer(instance)
-    return instance, Response(serializer.data)
+def _listserializer(func):
+    # Helper decorator for ListSerializer
 
-myretrieve = drf_decorator(myretrieve)
+    def wrapped(context, data):
+        request = context.context["request"]
+        if hasattr(request, "_ultracache"):
+            iterable = data.all() if isinstance(data, Manager) else data
+            for obj in iterable:
+                if isinstance(obj, Model):
+                    ct = ContentType.objects.get_for_model(obj.__class__)
+                    request._ultracache.append((ct.id, obj.pk))
+        return func(context, data)
+
+    return wrapped
 
 
 if HAS_DRF:
-    ListModelMixin.list = mylist
-    RetrieveModelMixin.retrieve = myretrieve
+    ListModelMixin.list = drf_cache(ListModelMixin.list)
+    RetrieveModelMixin.retrieve = drf_cache(RetrieveModelMixin.retrieve)
+    Serializer.to_representation = _serializer(Serializer.to_representation)
+    ListSerializer.to_representation = _listserializer(ListSerializer.to_representation)
