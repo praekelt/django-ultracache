@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Ensure a working error message if pika is not found.
+
 1.11.9
 ------
 #. Simplify the DRF caching implementation. It also now considers objects touched by sub-serializers.
