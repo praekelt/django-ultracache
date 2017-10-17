@@ -8,6 +8,7 @@ from django.utils.decorators import available_attrs
 from django.views.generic.base import TemplateResponseMixin
 from django.conf import settings
 
+from ultracache import _thread_locals
 from ultracache.utils import cache_meta, get_current_site_pk
 
 
@@ -22,7 +23,10 @@ def cached_get(timeout, *params):
             # used in urls.py.
             request = getattr(view_or_request, "request", view_or_request)
 
-            # If request not GET or HEAD never cache
+            if not hasattr(_thread_locals, "ultracache_request"):
+                setattr(_thread_locals, "ultracache_request", request)
+
+           # If request not GET or HEAD never cache
             if request.method.lower() not in ("get", "head"):
                 return view_func(view_or_request, *args, **kwargs)
 

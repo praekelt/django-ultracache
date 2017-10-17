@@ -84,6 +84,7 @@ def _my_resolve_lookup(self, context):
                     if ("request" in context) and hasattr(context["request"], "_ultracache"):
                         # get_for_model itself is cached
                         ct = ContentType.objects.get_for_model(current.__class__)
+                        print "ADD", ct.id, current.pk
                         context["request"]._ultracache.append((ct.id, current.pk))
 
         except Exception as e:
@@ -106,8 +107,7 @@ def _my_resolve_lookup(self, context):
 
         return current
 
-Variable._resolve_lookup = _my_resolve_lookup
-
+#Variable._resolve_lookup = _my_resolve_lookup
 
 
 """If Django Rest Framework is installed patch a few mixins. Serializers are
@@ -214,3 +214,20 @@ if HAS_DRF:
     RetrieveModelMixin.retrieve = drf_cache(RetrieveModelMixin.retrieve)
     Serializer.to_representation = _serializer(Serializer.to_representation)
     ListSerializer.to_representation = _listserializer(ListSerializer.to_representation)
+
+
+from django.db.models import Model
+from ultracache import _thread_locals
+
+def mygetattr(self, name):
+    print "getting %s" % name
+    request = getattr(_thread_locals, "ultracache_request", None)
+    if hasattr(request, "_ultracache"):
+        instance = self
+        # get_for_model itself is cached
+        ct = ContentType.objects.get_for_model(instance.__class__)
+        print "ADD", ct.id, instance.pk
+        request._ultracache.append((ct.id, instance.pk))
+    return super(Model, self).__getattribute__(name)
+
+Model.__getattribute__ = mygetattr

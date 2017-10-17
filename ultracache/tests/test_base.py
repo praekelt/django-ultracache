@@ -300,6 +300,7 @@ class DecoratorTestCase(TestCase):
         url = reverse('cached-view')
 
         # Initial render
+        print "one"
         views.COUNTER = 1
         response = self.client.get(url)
         result = response.content
@@ -314,7 +315,9 @@ class DecoratorTestCase(TestCase):
         self.failUnless('counter three = 1' in result)
         self.failUnless('counter four = 1' in result)
         self.failUnless('title = Four' in result)
+        print "========="
 
+        print "two"
         # Change object one
         views.COUNTER = 2
         one.title = 'Onxe'
@@ -332,6 +335,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('counter three = 2' in result)
         self.failUnless('counter four = 2' in result)
         self.failUnless('title = Four' in result)
+        print "============"
 
         # Change object two
         views.COUNTER = 3
