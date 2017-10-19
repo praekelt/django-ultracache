@@ -4,6 +4,7 @@ Changelog
 next
 ----
 #. Ensure a working error message if pika is not found.
+#. `cached_get` is now considers any object accessed in get_context_data and not just objects accessed in the view template.
 
 1.11.9
 ------

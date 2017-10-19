@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db.migrations.recorder import MigrationRecorder
 from django.db.models import Model
-from django.db.models.signals import post_init, post_save, post_delete
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 try:
@@ -22,23 +22,6 @@ try:
     invalidate = settings.ULTRACACHE["invalidate"]
 except (AttributeError, KeyError):
     invalidate = True
-
-from ultracache import _thread_locals
-
-
-@receiver(post_init)
-def on_post_init(sender, **kwargs):
-    """Update the _ultracache list"""
-    return
-    if not issubclass(sender, Model):
-        return
-    instance = kwargs["instance"]
-    request = getattr(_thread_locals, "ultracache_request", None)
-    if hasattr(request, "_ultracache"):
-        # get_for_model itself is cached
-        ct = ContentType.objects.get_for_model(instance.__class__)
-        print "ADD", ct.id, instance.pk
-        request._ultracache.append((ct.id, instance.pk))
 
 
 @receiver(post_save)
