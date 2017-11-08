@@ -45,6 +45,10 @@ class CachedView(TemplateView):
         context["three"] = DummyForeignModel.objects.get(code="three")
         context["four"] = DummyModel.objects.get(code="four")
         context["counter"] = COUNTER
+
+        # We never actually do anything with five, but cached_get is aware of it
+        dc = DummyModel.objects.get(code="five")
+
         return context
 
 

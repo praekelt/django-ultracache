@@ -1,6 +1,6 @@
 """Monkey patch template variable resolution so we can recognize which objects
 are covered within a containing caching template tag. The patch is based on
-Django 1.9 but is backwards compatible with 1.6."""
+Django 1.11 but is backwards compatible with 1.9."""
 
 import inspect
 import md5
@@ -15,6 +15,7 @@ from django.template.context import BaseContext
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
+from ultracache import _thread_locals
 from ultracache.utils import cache_meta, get_current_site_pk
 
 try:
@@ -23,7 +24,7 @@ except ImportError:
     logger = None
 
 
-def _my_resolve_lookup(self, context):
+def my_resolve_lookup(self, context):
         """
         Performs resolution of a real variable (i.e. not a literal) against the
         given context.
@@ -106,8 +107,7 @@ def _my_resolve_lookup(self, context):
 
         return current
 
-Variable._resolve_lookup = _my_resolve_lookup
-
+Variable._resolve_lookup = my_resolve_lookup
 
 
 """If Django Rest Framework is installed patch a few mixins. Serializers are
@@ -214,3 +214,22 @@ if HAS_DRF:
     RetrieveModelMixin.retrieve = drf_cache(RetrieveModelMixin.retrieve)
     Serializer.to_representation = _serializer(Serializer.to_representation)
     ListSerializer.to_representation = _listserializer(ListSerializer.to_representation)
+
+
+# Dark magic enables us to record object access. This enables cached_get to
+# keep track of objects accessed in get_context_data itself and not just in the
+# templates being rendered.
+
+def my__getattribute__(self, name):
+    request = getattr(_thread_locals, "ultracache_request", None)
+    if hasattr(request, "_ultracache") and \
+        not hasattr(request, "_ultracache_attr_marker"):
+        setattr(request, "_ultracache_attr_marker", 1)
+        if hasattr(self, "pk"):
+            # get_for_model itself is cached
+            ct = ContentType.objects.get_for_model(self.__class__)
+            request._ultracache.append((ct.id, self.pk))
+        delattr(request, "_ultracache_attr_marker")
+    return super(Model, self).__getattribute__(name)
+
+Model.__getattribute__ = my__getattribute__

@@ -297,6 +297,7 @@ class DecoratorTestCase(TestCase):
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
         four = DummyModel.objects.create(title='Four', code='four')
+        five = DummyModel.objects.create(title='Five', code='five')
         url = reverse('cached-view')
 
         # Initial render
@@ -388,6 +389,31 @@ class DecoratorTestCase(TestCase):
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 4' in result)
         self.failUnless('counter four = 5' in result)
+        self.failUnless('render_view = Onxe' in result)
+        self.failUnless('include = Onxe' in result)
+        self.failUnless('title = Fouxr' in result)
+        self.failIf('title = Four' in result)
+
+        # Change object five. This object is never accessed in the template,
+        # only get_context_data of CachedView. "counter four" and "counter
+        # five" are under cached_get and not in any ultracache tag, and are
+        # thus the only counters incremented.
+        views.COUNTER = 6
+        five.title = 'Fivxe'
+        five.save()
+        response = self.client.get(url)
+        result = response.content
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('title = Threxe' in result)
+        self.failIf('title = Three' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 4' in result)
+        self.failUnless('counter four = 6' in result)
+        self.failUnless('counter five = 6' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failUnless('title = Fouxr' in result)
