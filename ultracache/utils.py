@@ -1,5 +1,3 @@
-import sys
-
 from django.core.cache import cache
 from django.contrib.sites.models import Site
 try:
@@ -9,13 +7,13 @@ except ImportError:
 from django.conf import settings
 
 
-# The metadata itself can"t be allowed to grow endlessly. This value is the
+# The metadata itself can't be allowed to grow endlessly. This value is the
 # maximum size in bytes of a metadata list. If your caching backend supports
 # compression set a larger value.
 try:
     MAX_SIZE = settings.ULTRACACHE["max-registry-value-size"]
 except (AttributeError, KeyError):
-    MAX_SIZE = 25000
+    MAX_SIZE = 1000000
 
 
 def reduce_list_size(li):
@@ -23,16 +21,19 @@ def reduce_list_size(li):
         - the last N items of li whose total size is less than MAX_SIZE
         - the rest of the original list li
     """
-    size = sys.getsizeof(li)
+    # sys.getsizeof is nearly useless. All our data is stringable so rather
+    # use that as a measure of size.
+    size = len(repr(li))
     keep = li
     toss = []
     n = len(li)
     decrement_by = max(n / 10, 10)
     while (size >= MAX_SIZE) and (n > 0):
+        print "SHRINGH"
         n -= decrement_by
         toss = li[:-n]
         keep = li[-n:]
-        size = sys.getsizeof(keep)
+        size = len(repr(keep))
     return keep, toss
 
 
@@ -40,7 +41,6 @@ def cache_meta(request, cache_key, start_index=0):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
-    #import pdb;pdb.set_trace()
     path = request.get_full_path()
     headers = {k[5:].replace("_", "-").lower(): v for \
         k, v in request.META.items() if k.startswith("HTTP_")}
@@ -116,8 +116,7 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_paths[key] = keep
-        #if path not in keep:
-        if 1:
+        if [path, headers] not in keep:
             if key not in to_set_paths:
                 to_set_paths[key] = keep
             to_set_paths[key] = to_set_paths[key] + [[path, headers]]
@@ -148,8 +147,7 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_content_types_paths[key] = keep
-        #if path not in keep:
-        if 1:
+        if [path, headers] not in keep:
             if key not in to_set_content_types_paths:
                 to_set_content_types_paths[key] = keep
             to_set_content_types_paths[key] = to_set_content_types_paths[key] \

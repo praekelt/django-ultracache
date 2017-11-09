@@ -4,7 +4,8 @@ Changelog
 next
 ----
 #. Ensure a working error message if pika is not found.
-#. `cached_get` is now considers any object accessed in get_context_data and not just objects accessed in the view template.
+#. `cached_get` now considers any object accessed in get_context_data and not just objects accessed in the view template.
+#. The original request headers are now sent to the purgers along with the path. This enables fine-grained proxy invalidation.
 
 1.11.9
 ------

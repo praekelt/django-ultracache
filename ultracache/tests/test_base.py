@@ -23,8 +23,6 @@ class TemplateTagsTestCase(TestCase):
         super(TemplateTagsTestCase, cls).setUpClass()
         cls.factory = RequestFactory()
         cls.request = cls.factory.get('/')
-        #import pdb;pdb.set_trace()
-        #cls.request.add_header
         cache.clear()
         dummy_proxy.clear()
         cls.first_site = Site.objects.all().first()
