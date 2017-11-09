@@ -40,7 +40,10 @@ def cache_meta(request, cache_key, start_index=0):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
+    #import pdb;pdb.set_trace()
     path = request.get_full_path()
+    headers = {k[5:].replace("_", "-").lower(): v for \
+        k, v in request.META.items() if k.startswith("HTTP_")}
 
     # Lists needed for cache.get_many
     to_set_get_keys = []
@@ -113,10 +116,11 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_paths[key] = keep
-        if path not in keep:
+        #if path not in keep:
+        if 1:
             if key not in to_set_paths:
                 to_set_paths[key] = keep
-            to_set_paths[key] = to_set_paths[key] + [path]
+            to_set_paths[key] = to_set_paths[key] + [[path, headers]]
     if to_set_paths == di:
         to_set_paths = {}
 
@@ -144,10 +148,12 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_content_types_paths[key] = keep
-        if path not in keep:
+        #if path not in keep:
+        if 1:
             if key not in to_set_content_types_paths:
                 to_set_content_types_paths[key] = keep
-            to_set_content_types_paths[key] = to_set_content_types_paths[key] + [path]
+            to_set_content_types_paths[key] = to_set_content_types_paths[key] \
+                + [[path, headers]]
     if to_set_content_types_paths == di:
         to_set_content_types_paths = {}
 
