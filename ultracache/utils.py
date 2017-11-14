@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.core.cache import cache
 from django.contrib.sites.models import Site
 try:
@@ -5,6 +7,7 @@ try:
 except ImportError:
     from django.contrib.sites.models import get_current_site
 from django.conf import settings
+from django.http.cookie import SimpleCookie
 
 
 # The metadata itself can't be allowed to grow endlessly. This value is the
@@ -14,6 +17,27 @@ try:
     MAX_SIZE = settings.ULTRACACHE["max-registry-value-size"]
 except (AttributeError, KeyError):
     MAX_SIZE = 1000000
+
+try:
+    CONSIDER_HEADERS = [
+        header.lower() for header in settings.ULTRACACHE["consider-headers"]
+    ]
+except (AttributeError, KeyError):
+    CONSIDER_HEADERS = []
+
+try:
+    CONSIDER_COOKIES = [
+        cookie.lower() for cookie in settings.ULTRACACHE["consider-cookies"]
+    ]
+except (AttributeError, KeyError):
+    CONSIDER_COOKIES = []
+
+# Raise on potentially confusing settings
+if CONSIDER_COOKIES and ("cookie" in CONSIDER_HEADERS):
+    raise RuntimeError(
+        "consider-cookies has a value but cookie is also present in \
+consider-headers"
+    )
 
 
 def reduce_list_size(li):
@@ -29,7 +53,6 @@ def reduce_list_size(li):
     n = len(li)
     decrement_by = max(n / 10, 10)
     while (size >= MAX_SIZE) and (n > 0):
-        print "SHRINGH"
         n -= decrement_by
         toss = li[:-n]
         keep = li[-n:]
@@ -42,8 +65,23 @@ def cache_meta(request, cache_key, start_index=0):
     in Django's cache."""
 
     path = request.get_full_path()
-    headers = {k[5:].replace("_", "-").lower(): v for \
-        k, v in request.META.items() if k.startswith("HTTP_")}
+    # todo: cache headers on the request since they never change during the
+    # request.
+
+    # Reduce headers to the subset as defined by the settings
+    headers = OrderedDict()
+    for k, v in sorted(request.META.items()):
+        if (k == "HTTP_COOKIE") and CONSIDER_COOKIES:
+            cookie = SimpleCookie()
+            cookie.load(v)
+            headers["cookie"] = "; ".join([
+                "%s=%s" % (k, morsel.value) for k, morsel \
+                    in sorted(cookie.items()) if k in CONSIDER_COOKIES
+            ])
+        elif k.startswith("HTTP_"):
+            k = k[5:].replace("_", "-").lower()
+            if k in CONSIDER_HEADERS:
+                headers[k] = v
 
     # Lists needed for cache.get_many
     to_set_get_keys = []

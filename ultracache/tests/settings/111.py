@@ -52,5 +52,6 @@ TEMPLATES = [
 
 ULTRACACHE = {
     "purge": {"method": "ultracache.tests.utils.dummy_purger"},
-    "drf": {"viewsets": {"*": {}}}
+    "drf": {"viewsets": {"*": {}}},
+    "consider-headers": ["cookie"],
 }

@@ -1,13 +1,14 @@
 ## -*- coding: utf-8 -*-
 
 from django import template
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 from django.core.cache import cache
+from django.http.cookie import SimpleCookie
 from django.test import TestCase
 from django.test.client import Client, RequestFactory
 from django.test.utils import override_settings
-from django.conf import settings
 
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel

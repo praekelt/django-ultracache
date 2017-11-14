@@ -1,3 +1,6 @@
+from collections import OrderedDict
+
+
 class DummyProxy(dict):
 
     def make_key(self, path, headers=None):
