@@ -164,16 +164,37 @@ Automatic invalidation defaults to true. To disable automatic invalidation set::
         "invalidate": False
     }
 
-``django-ultracache`` maintains a registry in Django's caching backend (see `How does it work`). This registry
-can"t be allowed to grow unchecked, thus a limit is imposed on the registry size. It would be inefficient to
-impose a size limit on the entire registry so a maximum size is set per cached value. It defaults to 25000 bytes::
+``django-ultracache`` maintains a registry in Django's caching backend (see
+`How does it work`). This registry can"t be allowed to grow unchecked, thus a
+limit is imposed on the registry size. It would be inefficient to impose a size
+limit on the entire registry so a maximum size is set per cached value. It
+defaults to 1000000 bytes::
 
     ULTRACACHE = {
         "max-registry-value-size": 10000
     }
 
-It is highly recommended to use a backend that supports compression because a larger size improves cache coherency.
+It is highly recommended to use a backend that supports compression because a
+larger size improves cache coherency.
 
+If you make use of a reverse caching proxy then you need the original set of
+request headers (or a relevant subset) to purge paths from the proxy correctly.
+The problem with the modern web is the sheer amount of request headers present
+on every request would lead to a large number of entries having to be stored by
+``django-ultracache`` in Django's caching backend. Your proxy probably has a
+custom hash computation rule that considers only the request path (always
+implied) and Django's sessionid cookie, so define a setting to also consider only
+the cookie on the Django side::
+
+    ULTRACACHE = {
+        "consider-headers": ["cookie"]
+    }
+
+If you only need to consider some cookies then set::
+
+    ULTRACACHE = {
+        "consider-cookies": ["sessionid", "some-other-cookie"]
+    }
 
 How does it work?
 -----------------

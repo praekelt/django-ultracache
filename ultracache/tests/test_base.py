@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 
 from django import template
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 from django.core.cache import cache
+from django.http.cookie import SimpleCookie
 from django.test import TestCase
 from django.test.client import Client, RequestFactory
 from django.test.utils import override_settings
-from django.conf import settings
 
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
@@ -147,7 +148,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 1
         })
         result = t.render(context)
-        dummy_proxy.cache('/aaa/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
         self.failUnless('counter outer = 1' in result)
@@ -170,7 +171,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 2
         })
         result = t.render(context)
-        dummy_proxy.cache('/bbb/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -194,7 +195,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 3
         })
         result = t.render(context)
-        dummy_proxy.cache('/ccc/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -219,7 +220,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 4
         })
         result = t.render(context)
-        dummy_proxy.cache('/ddd/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -245,7 +246,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 5
         })
         result = t.render(context)
-        dummy_proxy.cache('/eee/', result)
+        dummy_proxy.cache(request, result)
         # RenderView is only view aware of DummyOtherModel. That means
         # test_ultracache_invalidate_outer and
         # test_ultracache_invalidate_render_view are expired.
@@ -267,7 +268,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 6
         })
         result = t.render(context)
-        dummy_proxy.cache('/fff/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = Twxo' in result)
         self.failIf('title = Two' in result)

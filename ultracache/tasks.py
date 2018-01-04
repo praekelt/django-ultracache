@@ -1,3 +1,4 @@
+import json
 import urllib
 import urlparse
 
@@ -12,7 +13,7 @@ from django.conf import settings
 
 
 @shared_task(max_retries=3, ignore_result=True)
-def broadcast_purge(path):
+def broadcast_purge(path, headers=None):
     if not DO_TASK:
         raise RuntimeError("Library pika==0.10.0 not found")
 
@@ -35,7 +36,7 @@ def broadcast_purge(path):
     channel.basic_publish(
         exchange="purgatory",
         routing_key="",
-        body=path
+        body=json.dumps({"path": path, "headers": headers or {}})
     )
     connection.close()
     return True
