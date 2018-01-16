@@ -75,10 +75,7 @@ def my_resolve_lookup(self, context):
                             try:
                                 inspect.getcallargs(current)
                             except TypeError:  # arguments *were* required
-                                try:
-                                    current = context.template.engine.string_if_invalid  # invalid method call
-                                except AttributeError:
-                                    current = settings.TEMPLATE_STRING_IF_INVALID
+                                current = context.template.engine.string_if_invalid  # invalid method call
                             else:
                                 raise
                 elif isinstance(current, Model):
@@ -98,10 +95,7 @@ def my_resolve_lookup(self, context):
                 )
 
             if getattr(e, "silent_variable_failure", False):
-                try:
-                    current = context.template.engine.string_if_invalid
-                except AttributeError:
-                    current = settings.TEMPLATE_STRING_IF_INVALID
+                current = context.template.engine.string_if_invalid
             else:
                 raise
 
