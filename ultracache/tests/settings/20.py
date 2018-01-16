@@ -21,6 +21,7 @@ INSTALLED_APPS = (
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
+    "crum",
     "rest_framework"
 )
 
@@ -29,8 +30,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
-
-#SITE_ID = 1
 
 SECRET_KEY = "SECRET_KEY"
 

@@ -2,8 +2,8 @@
 are covered within a containing caching template tag. The patch is based on
 Django 1.11 but is backwards compatible with 1.9."""
 
+import hashlib
 import inspect
-import md5
 import pickle
 import types
 from collections import OrderedDict
@@ -143,7 +143,8 @@ def drf_cache(func):
             if "django.contrib.sites" in settings.INSTALLED_APPS:
                 li.append(get_current_site_pk(request))
 
-            cache_key = md5.new(":".join([str(l) for l in li])).hexdigest()
+            s = ":".join([str(l) for l in li])
+            cache_key = hashlib.md5(s.encode("utf-8")).hexdigest()
 
             cached = cache.get(cache_key, None)
             if cached is not None:

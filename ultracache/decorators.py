@@ -1,4 +1,4 @@
-import md5
+import hashlib
 import types
 from functools import wraps
 
@@ -55,18 +55,19 @@ def cached_get(timeout, *params):
                 li.append(get_current_site_pk(request))
 
             # Pre-sort kwargs
-            keys = kwargs.keys()
+            keys = list(kwargs.keys())
             keys.sort()
             for key in keys:
                 li.append("%s,%s" % (key, kwargs[key]))
 
             # Extend cache key with custom variables
             for param in params:
-                if not isinstance(param, types.StringType):
+                if not isinstance(param, str):
                     param = str(param)
                 li.append(eval(param))
 
-            hashed = md5.new(":".join([str(l) for l in li])).hexdigest()
+            s = ":".join([str(l) for l in li])
+            hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
             cache_key = "ucache-get-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:

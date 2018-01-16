@@ -2,13 +2,13 @@
 
 from django import template
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.http.cookie import SimpleCookie
 from django.test import TestCase
 from django.test.client import Client, RequestFactory
 from django.test.utils import override_settings
+from django.urls import reverse
 
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
@@ -304,7 +304,7 @@ class DecoratorTestCase(TestCase):
         # Initial render
         views.COUNTER = 1
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.assertEqual(response.status_code, 200)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -322,7 +322,7 @@ class DecoratorTestCase(TestCase):
         one.title = 'Onxe'
         one.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -340,7 +340,7 @@ class DecoratorTestCase(TestCase):
         two.title = 'Twxo'
         two.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -359,7 +359,7 @@ class DecoratorTestCase(TestCase):
         three.title = 'Threxe'
         three.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -379,7 +379,7 @@ class DecoratorTestCase(TestCase):
         four.title = 'Fouxr'
         four.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -403,7 +403,7 @@ class DecoratorTestCase(TestCase):
         five.title = 'Fivxe'
         five.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -440,12 +440,12 @@ class DecoratorTestCase(TestCase):
         """
         url = reverse('bustable-cached-view')
         response = self.client.get(url + '?aaa=1')
-        self.failUnless('aaa=1' in response.content)
+        self.failUnless('aaa=1' in response.content.decode("utf-8"))
         response = self.client.get(url + '?aaa=2')
-        self.failUnless('aaa=2' in response.content)
+        self.failUnless('aaa=2' in response.content.decode("utf-8"))
 
         url = reverse('non-bustable-cached-view')
         response = self.client.get(url + '?aaa=1')
-        self.failUnless('aaa=1' in response.content)
+        self.failUnless('aaa=1' in response.content.decode("utf-8"))
         response = self.client.get(url + '?aaa=2')
-        self.failIf('aaa=2' in response.content)
+        self.failIf('aaa=2' in response.content.decode("utf-8"))

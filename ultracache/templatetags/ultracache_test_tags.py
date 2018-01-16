@@ -3,10 +3,10 @@
 import re
 
 from django import template
-from django.core.urlresolvers import reverse, get_script_prefix, resolve
+from django.conf import settings
 from django.http import HttpResponse
 from django.template.response import TemplateResponse
-from django.conf import settings
+from django.urls import reverse, resolve, get_script_prefix
 
 register = template.Library()
 
