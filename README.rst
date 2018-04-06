@@ -153,7 +153,41 @@ You can create custom reverse caching proxy purgers. See ``purgers.py`` for exam
         "purge": {"method": "myproduct.purgers.squid"}
     }
 
-todo: explain settings and the twisted service. Note strict version pin on pika==0.10.0.
+The most useful purger is ``broadcast``. As the name implies it broadcasts purge
+instructions to a queue. Note that you need celery running and configured to
+write to a RabbitMQ instance for this to work correctly.
+
+The purge instructions are consumed by the ``cache-purge-consumer.py`` script.
+The script reads a purge instruction from the queue and then sends a purge
+instruction to an associated reverse caching proxy. To run the script::
+
+    virtualenv ve
+    ./ve/bin/pip install -e .
+    ./ve/bin/python cache-purge-consumer.py -c config.yaml
+
+The config file has these options:
+
+#. rabbit-url
+Specify RabbitMQ connection parameters in the AMQP URL format
+``amqp://username:password@host:port/<virtual_host>[?query-string]``.
+*Optional. Defaults to ``amqp://guest:guest@127.0.0.1:5672/%2F``. Note the
+URL encoding for the path.*
+
+#. host
+A reverse caching proxy may be responsible for many domains (hosts), and
+ultracache will keep track of the host that is involved in a purge request;
+however, if you have a use case that does not supply a hostname, eg. doing a
+PURGE request via curl, then forcing a hostname solves the use case.
+*Optional.*
+
+#. proxy-address
+The IP address or hostname of the reverse caching proxy.
+*Optional. Defaults to 127.0.0.1.*
+
+#. logfile
+Set to a file to log all purge instructions. Specify ``stdout`` to log to
+standard out.
+*Optional.*
 
 Other settings
 **************

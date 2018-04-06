@@ -15,6 +15,8 @@ setup(
     install_requires = [
         "django",
         "requests",
+        "pika>=0.11,<1.0",
+        "PyYAML"
     ],
     include_package_data=True,
     classifiers=[
