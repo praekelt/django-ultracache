@@ -1,13 +1,14 @@
-# -*- coding: utf-8 -*-
+## -*- coding: utf-8 -*-
 
 from django import template
-from django.core.urlresolvers import reverse
+from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.cache import cache
+from django.http.cookie import SimpleCookie
 from django.test import TestCase
 from django.test.client import Client, RequestFactory
 from django.test.utils import override_settings
-from django.conf import settings
+from django.urls import reverse
 
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
@@ -147,7 +148,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 1
         })
         result = t.render(context)
-        dummy_proxy.cache('/aaa/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
         self.failUnless('counter outer = 1' in result)
@@ -170,7 +171,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 2
         })
         result = t.render(context)
-        dummy_proxy.cache('/bbb/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -194,7 +195,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 3
         })
         result = t.render(context)
-        dummy_proxy.cache('/ccc/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -219,7 +220,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 4
         })
         result = t.render(context)
-        dummy_proxy.cache('/ddd/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -245,7 +246,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 5
         })
         result = t.render(context)
-        dummy_proxy.cache('/eee/', result)
+        dummy_proxy.cache(request, result)
         # RenderView is only view aware of DummyOtherModel. That means
         # test_ultracache_invalidate_outer and
         # test_ultracache_invalidate_render_view are expired.
@@ -267,7 +268,7 @@ class TemplateTagsTestCase(TestCase):
             'counter': 6
         })
         result = t.render(context)
-        dummy_proxy.cache('/fff/', result)
+        dummy_proxy.cache(request, result)
         self.failUnless('title = Onxe' in result)
         self.failIf('title = Twxo' in result)
         self.failIf('title = Two' in result)
@@ -297,12 +298,13 @@ class DecoratorTestCase(TestCase):
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
         four = DummyModel.objects.create(title='Four', code='four')
+        five = DummyModel.objects.create(title='Five', code='five')
         url = reverse('cached-view')
 
         # Initial render
         views.COUNTER = 1
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.assertEqual(response.status_code, 200)
         self.failUnless('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -320,7 +322,7 @@ class DecoratorTestCase(TestCase):
         one.title = 'Onxe'
         one.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Two' in result)
@@ -338,7 +340,7 @@ class DecoratorTestCase(TestCase):
         two.title = 'Twxo'
         two.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -357,7 +359,7 @@ class DecoratorTestCase(TestCase):
         three.title = 'Threxe'
         three.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -377,7 +379,7 @@ class DecoratorTestCase(TestCase):
         four.title = 'Fouxr'
         four.save()
         response = self.client.get(url)
-        result = response.content
+        result = response.content.decode("utf-8")
         self.failUnless('title = Onxe' in result)
         self.failIf('title = One' in result)
         self.failUnless('title = Twxo' in result)
@@ -388,6 +390,31 @@ class DecoratorTestCase(TestCase):
         self.failUnless('counter two = 3' in result)
         self.failUnless('counter three = 4' in result)
         self.failUnless('counter four = 5' in result)
+        self.failUnless('render_view = Onxe' in result)
+        self.failUnless('include = Onxe' in result)
+        self.failUnless('title = Fouxr' in result)
+        self.failIf('title = Four' in result)
+
+        # Change object five. This object is never accessed in the template,
+        # only get_context_data of CachedView. "counter four" and "counter
+        # five" are under cached_get and not in any ultracache tag, and are
+        # thus the only counters incremented.
+        views.COUNTER = 6
+        five.title = 'Fivxe'
+        five.save()
+        response = self.client.get(url)
+        result = response.content.decode("utf-8")
+        self.failUnless('title = Onxe' in result)
+        self.failIf('title = One' in result)
+        self.failUnless('title = Twxo' in result)
+        self.failIf('title = Two' in result)
+        self.failUnless('title = Threxe' in result)
+        self.failIf('title = Three' in result)
+        self.failUnless('counter one = 2' in result)
+        self.failUnless('counter two = 3' in result)
+        self.failUnless('counter three = 4' in result)
+        self.failUnless('counter four = 6' in result)
+        self.failUnless('counter five = 6' in result)
         self.failUnless('render_view = Onxe' in result)
         self.failUnless('include = Onxe' in result)
         self.failUnless('title = Fouxr' in result)
@@ -413,12 +440,12 @@ class DecoratorTestCase(TestCase):
         """
         url = reverse('bustable-cached-view')
         response = self.client.get(url + '?aaa=1')
-        self.failUnless('aaa=1' in response.content)
+        self.failUnless('aaa=1' in response.content.decode("utf-8"))
         response = self.client.get(url + '?aaa=2')
-        self.failUnless('aaa=2' in response.content)
+        self.failUnless('aaa=2' in response.content.decode("utf-8"))
 
         url = reverse('non-bustable-cached-view')
         response = self.client.get(url + '?aaa=1')
-        self.failUnless('aaa=1' in response.content)
+        self.failUnless('aaa=1' in response.content.decode("utf-8"))
         response = self.client.get(url + '?aaa=2')
-        self.failIf('aaa=2' in response.content)
+        self.failIf('aaa=2' in response.content.decode("utf-8"))

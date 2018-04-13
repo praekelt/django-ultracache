@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.11.10
+-------
+#. Ensure a working error message if pika is not found.
+#. `cached_get` now considers any object accessed in get_context_data and not just objects accessed in the view template.
+#. The original request headers are now sent to the purgers along with the path. This enables fine-grained proxy invalidation.
+#. Django 2.0 and Python 3 compatibility. Django 1.9 support has been dropped.
+
 1.11.9
 ------
 #. Simplify the DRF caching implementation. It also now considers objects touched by sub-serializers.

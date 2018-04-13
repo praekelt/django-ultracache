@@ -4,7 +4,7 @@ setup(
     name="django-ultracache",
     description="Drop-in replacement for Django's template fragment caching. Provides automatic cache invalidation.",
     long_description = open("README.rst", "r").read() + open("AUTHORS.rst", "r").read() + open("CHANGELOG.rst", "r").read(),
-    version="1.11.9",
+    version="1.11.10",
     author="Praekelt Consulting",
     author_email="dev@praekelt.com",
     license="BSD",
@@ -15,6 +15,8 @@ setup(
     install_requires = [
         "django",
         "requests",
+        "pika>=0.11,<1.0",
+        "PyYAML"
     ],
     include_package_data=True,
     classifiers=[

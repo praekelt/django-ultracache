@@ -1,3 +1,5 @@
+import threading
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -5,7 +7,6 @@ from django.db.migrations.recorder import MigrationRecorder
 from django.db.models import Model
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-
 
 try:
     from django.utils.module_loading import import_string as importer
@@ -60,8 +61,8 @@ def on_post_save(sender, **kwargs):
                 # this content type.
                 key = "ucache-ct-pth-%s" % ct.id
                 if purger is not None:
-                    for path in cache.get(key, []):
-                        purger(path)
+                    for li in cache.get(key, []):
+                        purger(li[0], li[1])
                 cache.delete(key)
 
             else:
@@ -79,8 +80,8 @@ def on_post_save(sender, **kwargs):
                 # Purge paths in reverse caching proxy
                 key = "ucache-pth-%s-%s" % (ct.id, obj.pk)
                 if purger is not None:
-                    for path in cache.get(key, []):
-                        purger(path)
+                    for li in cache.get(key, []):
+                        purger(li[0], li[1])
                 cache.delete(key)
 
 
@@ -119,6 +120,6 @@ def on_post_delete(sender, **kwargs):
             # Invalidate paths in reverse caching proxy
             key = "ucache-pth-%s-%s" % (ct.id, obj.pk)
             if purger is not None:
-                for path in cache.get(key, []):
-                    purger(path)
+                for li in cache.get(key, []):
+                    purger(li[0], li[1])
             cache.delete(key)

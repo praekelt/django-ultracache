@@ -153,7 +153,41 @@ You can create custom reverse caching proxy purgers. See ``purgers.py`` for exam
         "purge": {"method": "myproduct.purgers.squid"}
     }
 
-todo: explain settings and the twisted service. Note strict version pin on pika==0.10.0.
+The most useful purger is ``broadcast``. As the name implies it broadcasts purge
+instructions to a queue. Note that you need celery running and configured to
+write to a RabbitMQ instance for this to work correctly.
+
+The purge instructions are consumed by the ``cache-purge-consumer.py`` script.
+The script reads a purge instruction from the queue and then sends a purge
+instruction to an associated reverse caching proxy. To run the script::
+
+    virtualenv ve
+    ./ve/bin/pip install -e .
+    ./ve/bin/python cache-purge-consumer.py -c config.yaml
+
+The config file has these options:
+
+#. rabbit-url
+Specify RabbitMQ connection parameters in the AMQP URL format
+``amqp://username:password@host:port/<virtual_host>[?query-string]``.
+*Optional. Defaults to ``amqp://guest:guest@127.0.0.1:5672/%2F``. Note the
+URL encoding for the path.*
+
+#. host
+A reverse caching proxy may be responsible for many domains (hosts), and
+ultracache will keep track of the host that is involved in a purge request;
+however, if you have a use case that does not supply a hostname, eg. doing a
+PURGE request via curl, then forcing a hostname solves the use case.
+*Optional.*
+
+#. proxy-address
+The IP address or hostname of the reverse caching proxy.
+*Optional. Defaults to 127.0.0.1.*
+
+#. logfile
+Set to a file to log all purge instructions. Specify ``stdout`` to log to
+standard out.
+*Optional.*
 
 Other settings
 **************
@@ -164,16 +198,37 @@ Automatic invalidation defaults to true. To disable automatic invalidation set::
         "invalidate": False
     }
 
-``django-ultracache`` maintains a registry in Django's caching backend (see `How does it work`). This registry
-can"t be allowed to grow unchecked, thus a limit is imposed on the registry size. It would be inefficient to
-impose a size limit on the entire registry so a maximum size is set per cached value. It defaults to 25000 bytes::
+``django-ultracache`` maintains a registry in Django's caching backend (see
+`How does it work`). This registry can"t be allowed to grow unchecked, thus a
+limit is imposed on the registry size. It would be inefficient to impose a size
+limit on the entire registry so a maximum size is set per cached value. It
+defaults to 1000000 bytes::
 
     ULTRACACHE = {
         "max-registry-value-size": 10000
     }
 
-It is highly recommended to use a backend that supports compression because a larger size improves cache coherency.
+It is highly recommended to use a backend that supports compression because a
+larger size improves cache coherency.
 
+If you make use of a reverse caching proxy then you need the original set of
+request headers (or a relevant subset) to purge paths from the proxy correctly.
+The problem with the modern web is the sheer amount of request headers present
+on every request would lead to a large number of entries having to be stored by
+``django-ultracache`` in Django's caching backend. Your proxy probably has a
+custom hash computation rule that considers only the request path (always
+implied) and Django's sessionid cookie, so define a setting to also consider only
+the cookie on the Django side::
+
+    ULTRACACHE = {
+        "consider-headers": ["cookie"]
+    }
+
+If you only need to consider some cookies then set::
+
+    ULTRACACHE = {
+        "consider-cookies": ["sessionid", "some-other-cookie"]
+    }
 
 How does it work?
 -----------------
@@ -187,7 +242,4 @@ Tips
 ----
 
 #. If you are running a cluster of Django nodes then ensure that they use a shared caching backend.
-
-#. Expose objects in your templates. Instead of passing ``object_title`` to a template rather have the
-   template dereference ``object.title``.
 

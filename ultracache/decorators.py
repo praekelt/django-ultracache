@@ -1,4 +1,4 @@
-import md5
+import hashlib
 import types
 from functools import wraps
 
@@ -8,6 +8,7 @@ from django.utils.decorators import available_attrs
 from django.views.generic.base import TemplateResponseMixin
 from django.conf import settings
 
+from ultracache import _thread_locals
 from ultracache.utils import cache_meta, get_current_site_pk
 
 
@@ -22,7 +23,10 @@ def cached_get(timeout, *params):
             # used in urls.py.
             request = getattr(view_or_request, "request", view_or_request)
 
-            # If request not GET or HEAD never cache
+            if not hasattr(_thread_locals, "ultracache_request"):
+                setattr(_thread_locals, "ultracache_request", request)
+
+           # If request not GET or HEAD never cache
             if request.method.lower() not in ("get", "head"):
                 return view_func(view_or_request, *args, **kwargs)
 
@@ -51,18 +55,19 @@ def cached_get(timeout, *params):
                 li.append(get_current_site_pk(request))
 
             # Pre-sort kwargs
-            keys = kwargs.keys()
+            keys = list(kwargs.keys())
             keys.sort()
             for key in keys:
                 li.append("%s,%s" % (key, kwargs[key]))
 
             # Extend cache key with custom variables
             for param in params:
-                if not isinstance(param, types.StringType):
+                if not isinstance(param, str):
                     param = str(param)
                 li.append(eval(param))
 
-            hashed = md5.new(":".join([str(l) for l in li])).hexdigest()
+            s = ":".join([str(l) for l in li])
+            hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
             cache_key = "ucache-get-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:

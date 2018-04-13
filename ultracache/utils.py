@@ -1,4 +1,4 @@
-import sys
+from collections import OrderedDict
 
 from django.core.cache import cache
 from django.contrib.sites.models import Site
@@ -7,15 +7,37 @@ try:
 except ImportError:
     from django.contrib.sites.models import get_current_site
 from django.conf import settings
+from django.http.cookie import SimpleCookie
 
 
-# The metadata itself can"t be allowed to grow endlessly. This value is the
+# The metadata itself can't be allowed to grow endlessly. This value is the
 # maximum size in bytes of a metadata list. If your caching backend supports
 # compression set a larger value.
 try:
     MAX_SIZE = settings.ULTRACACHE["max-registry-value-size"]
 except (AttributeError, KeyError):
-    MAX_SIZE = 25000
+    MAX_SIZE = 1000000
+
+try:
+    CONSIDER_HEADERS = [
+        header.lower() for header in settings.ULTRACACHE["consider-headers"]
+    ]
+except (AttributeError, KeyError):
+    CONSIDER_HEADERS = []
+
+try:
+    CONSIDER_COOKIES = [
+        cookie.lower() for cookie in settings.ULTRACACHE["consider-cookies"]
+    ]
+except (AttributeError, KeyError):
+    CONSIDER_COOKIES = []
+
+# Raise on potentially confusing settings
+if CONSIDER_COOKIES and ("cookie" in CONSIDER_HEADERS):
+    raise RuntimeError(
+        "consider-cookies has a value but cookie is also present in \
+consider-headers"
+    )
 
 
 def reduce_list_size(li):
@@ -23,7 +45,9 @@ def reduce_list_size(li):
         - the last N items of li whose total size is less than MAX_SIZE
         - the rest of the original list li
     """
-    size = sys.getsizeof(li)
+    # sys.getsizeof is nearly useless. All our data is stringable so rather
+    # use that as a measure of size.
+    size = len(repr(li))
     keep = li
     toss = []
     n = len(li)
@@ -32,7 +56,7 @@ def reduce_list_size(li):
         n -= decrement_by
         toss = li[:-n]
         keep = li[-n:]
-        size = sys.getsizeof(keep)
+        size = len(repr(keep))
     return keep, toss
 
 
@@ -41,6 +65,23 @@ def cache_meta(request, cache_key, start_index=0):
     in Django's cache."""
 
     path = request.get_full_path()
+    # todo: cache headers on the request since they never change during the
+    # request.
+
+    # Reduce headers to the subset as defined by the settings
+    headers = OrderedDict()
+    for k, v in sorted(request.META.items()):
+        if (k == "HTTP_COOKIE") and CONSIDER_COOKIES:
+            cookie = SimpleCookie()
+            cookie.load(v)
+            headers["cookie"] = "; ".join([
+                "%s=%s" % (k, morsel.value) for k, morsel \
+                    in sorted(cookie.items()) if k in CONSIDER_COOKIES
+            ])
+        elif k.startswith("HTTP_"):
+            k = k[5:].replace("_", "-").lower()
+            if k in CONSIDER_HEADERS:
+                headers[k] = v
 
     # Lists needed for cache.get_many
     to_set_get_keys = []
@@ -113,10 +154,10 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_paths[key] = keep
-        if path not in keep:
+        if [path, headers] not in keep:
             if key not in to_set_paths:
                 to_set_paths[key] = keep
-            to_set_paths[key] = to_set_paths[key] + [path]
+            to_set_paths[key] = to_set_paths[key] + [[path, headers]]
     if to_set_paths == di:
         to_set_paths = {}
 
@@ -144,10 +185,11 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_content_types_paths[key] = keep
-        if path not in keep:
+        if [path, headers] not in keep:
             if key not in to_set_content_types_paths:
                 to_set_content_types_paths[key] = keep
-            to_set_content_types_paths[key] = to_set_content_types_paths[key] + [path]
+            to_set_content_types_paths[key] = to_set_content_types_paths[key] \
+                + [[path, headers]]
     if to_set_content_types_paths == di:
         to_set_content_types_paths = {}
 

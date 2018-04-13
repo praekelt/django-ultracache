@@ -21,6 +21,7 @@ INSTALLED_APPS = (
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
+    "crum",
     "rest_framework"
 )
 
@@ -30,11 +31,7 @@ CACHES = {
     }
 }
 
-#SITE_ID = 1
-
 SECRET_KEY = "SECRET_KEY"
-
-TEMPLATE_DIRS = (os.path.realpath(os.path.dirname(__file__)) + "/ultracache/tests/templates/",)
 
 TEMPLATES = [
     {
@@ -53,5 +50,6 @@ TEMPLATES = [
 
 ULTRACACHE = {
     "purge": {"method": "ultracache.tests.utils.dummy_purger"},
-    "drf": {"viewsets": {"*": {}}}
+    "drf": {"viewsets": {"*": {}}},
+    "consider-headers": ["cookie"],
 }

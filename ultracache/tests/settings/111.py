@@ -21,6 +21,7 @@ INSTALLED_APPS = (
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
+    "crum",
     "rest_framework"
 )
 
@@ -51,5 +52,6 @@ TEMPLATES = [
 
 ULTRACACHE = {
     "purge": {"method": "ultracache.tests.utils.dummy_purger"},
-    "drf": {"viewsets": {"*": {}}}
+    "drf": {"viewsets": {"*": {}}},
+    "consider-headers": ["cookie"],
 }

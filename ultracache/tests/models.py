@@ -8,7 +8,7 @@ class DummyModel(models.Model):
 
 class DummyForeignModel(models.Model):
     title = models.CharField(max_length=32)
-    points_to = models.ForeignKey(DummyModel)
+    points_to = models.ForeignKey(DummyModel, on_delete=models.CASCADE)
     code = models.CharField(max_length=32)
 
 
