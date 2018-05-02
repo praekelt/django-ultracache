@@ -1,6 +1,9 @@
 import json
 import urllib
-import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    import urlparse
 
 from celery import shared_task
 try:
