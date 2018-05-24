@@ -36,7 +36,7 @@ def broadcast_purge(path, headers=None):
         )
     connection = pika.BlockingConnection(pika.URLParameters(url))
     channel = connection.channel()
-    channel.exchange_declare(exchange="purgatory", type="fanout")
+    channel.exchange_declare(exchange="purgatory", exchange_type="fanout")
     channel.basic_publish(
         exchange="purgatory",
         routing_key="",
