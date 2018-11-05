@@ -2,11 +2,12 @@ import hashlib
 import types
 from functools import wraps
 
-from django.http import HttpResponse
+from django.conf import settings
 from django.core.cache import cache
+from django.http import HttpResponse
+from django.template.response import TemplateResponse
 from django.utils.decorators import available_attrs
 from django.views.generic.base import TemplateResponseMixin
-from django.conf import settings
 
 from ultracache import _thread_locals
 from ultracache.utils import cache_meta, get_current_site_pk
@@ -74,8 +75,11 @@ def cached_get(timeout, *params):
                 # The get view as outermost caller may bluntly set _ultracache
                 request._ultracache = []
                 response = view_func(view_or_request, *args, **kwargs)
-                content = getattr(response, "rendered_content", None) \
-                    or getattr(response, "content", None)
+                content = None
+                if isinstance(response, TemplateResponse):
+                    content = response.render().rendered_content
+                elif isinstance(response, HttpResponse):
+                    content = response.content
                 if content is not None:
                     headers = getattr(response, "_headers", {})
                     cache.set(

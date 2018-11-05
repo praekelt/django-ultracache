@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.11.11
+-------
+#. Add a test for tasks.
+
 1.11.10
 -------
 #. Ensure a working error message if pika is not found.
