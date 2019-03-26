@@ -28,7 +28,7 @@ def cached_get(timeout, *params):
             if not hasattr(_thread_locals, "ultracache_request"):
                 setattr(_thread_locals, "ultracache_request", request)
 
-           # If request not GET or HEAD never cache
+            # If request not GET or HEAD never cache
             if request.method.lower() not in ("get", "head"):
                 return view_func(view_or_request, *args, **kwargs)
 
@@ -101,22 +101,6 @@ def cached_get(timeout, *params):
     return decorator
 
 
-def xultracache(timeout, *params):
-    """Decorator applied to a view class. The get method is decorated
-    implicitly."""
-
-    def decorator(cls):
-        #@wraps(cls, assigned=available_attrs(cls))
-        def _wrapped_cls(*args, **kwargs):
-            import pdb;pdb.set_trace()
-            #klass = cls(*args, **kwargs)
-            cls.get = cached_get(cls.get, timeout, *params)
-            return cls
-
-        return _wrapped_cls
-    return decorator
-
-
 def ultracache(timeout, *params):
     """Decorator applied to a view class. The get method is decorated
     implicitly."""
@@ -132,24 +116,3 @@ def ultracache(timeout, *params):
 
         return WrappedClass
     return decorator
-
-
-class zultracache(object):
-
-    def __init__(self, timeout, *params):
-        self.timeout = timeout
-        self.params = params
-
-    def __call__(self, cls):
-        class Wrapped(cls):
-            pass
-            #classattr = self.arg
-            #def new_method(self, value):
-            #    return value * 2
-            cls.get = cached_get(cls.get, (self.timeout, self.params))
-
-            #@cached_get(self.timeout, *self.params)
-            #def get(*args, **kwargs):
-            #    return super().get(*args, **kwargs)
-
-        return Wrapped

@@ -10,6 +10,7 @@ from django.test.client import Client, RequestFactory
 from django.test.utils import override_settings
 from django.urls import reverse
 
+from ultracache import _thread_locals
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
 from ultracache.tests import views
@@ -282,34 +283,25 @@ class TemplateTagsTestCase(TestCase):
 class DecoratorTestCase(TestCase):
     fixtures = ["sites.json"]
 
-    #@classmethod
-    #def setUpClass(cls):
-    def xsetUp(cls):
-        super(DecoratorTestCase, cls).setUp()
-        cls.request = RequestFactory().get('/')
-        print("SETUP")
-        cache.clear()
-        dummy_proxy.clear()
-        DummyModel.objects.all().delete()
-        DummyForeignModel.objects.all().delete()
-        cls.first_site = Site.objects.all().first()
-        cls.second_site = Site.objects.all().last()
-
     @classmethod
     def setUpClass(cls):
         super(DecoratorTestCase, cls).setUpClass()
-        cls.request = RequestFactory().get('/')
-        print("SETUP")
-        cache.clear()
-        dummy_proxy.clear()
-        #DummyModel.objects.all().delete()
-        #DummyForeignModel.objects.all().delete()
         cls.first_site = Site.objects.all().first()
         cls.second_site = Site.objects.all().last()
 
-    def test_method_decorator(self):
-        """Render template through a view
-        """
+    def setUp(self):
+        super(DecoratorTestCase, self).setUp()
+        cache.clear()
+        dummy_proxy.clear()
+        # Ultracache is built with the understanding that we have one view and
+        # one request. Unit tests don't respect that, so clear thread locals
+        # manually.
+        if hasattr(_thread_locals, "ultracache_request"):
+            delattr(_thread_locals, "ultracache_request")
+
+    def test_method(self):
+        """Render template through a view with get method decorated with
+        cached_get."""
         one = DummyModel.objects.create(title='One', code='one')
         two = DummyModel.objects.create(title='Two', code='two')
         three = DummyForeignModel.objects.create(title='Three', points_to=one, code='three')
@@ -318,7 +310,7 @@ class DecoratorTestCase(TestCase):
         url = reverse('method-cached-view')
 
         # Initial render
-        views.COUNTER = 1
+        cache.set("counter", 1)
         response = self.client.get(url)
         result = response.content.decode("utf-8")
         self.assertEqual(response.status_code, 200)
@@ -334,7 +326,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object one
-        views.COUNTER = 2
+        cache.set("counter", 2)
         one.title = 'Onxe'
         one.save()
         response = self.client.get(url)
@@ -352,7 +344,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object two
-        views.COUNTER = 3
+        cache.set("counter", 3)
         two.title = 'Twxo'
         two.save()
         response = self.client.get(url)
@@ -371,7 +363,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object three
-        views.COUNTER = 4
+        cache.set("counter", 4)
         three.title = 'Threxe'
         three.save()
         response = self.client.get(url)
@@ -391,7 +383,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object four
-        views.COUNTER = 5
+        cache.set("counter", 5)
         four.title = 'Fouxr'
         four.save()
         response = self.client.get(url)
@@ -412,10 +404,10 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = Four' in result)
 
         # Change object five. This object is never accessed in the template,
-        # only get_context_data of [Method|Class]CachedView. "counter four" and "counter
+        # only get_context_data of CachedView. "counter four" and "counter
         # five" are under cached_get and not in any ultracache tag, and are
         # thus the only counters incremented.
-        views.COUNTER = 6
+        cache.set("counter", 6)
         five.title = 'Fivxe'
         five.save()
         response = self.client.get(url)
@@ -436,8 +428,8 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Fouxr' in result)
         self.failIf('title = Four' in result)
 
-    def xtest_class_decorator(self):
-        """Render template through a view
+    def test_class(self):
+        """Render template through a view decorated with ultracache
         """
         one = DummyModel.objects.create(title='One', code='one')
         two = DummyModel.objects.create(title='Two', code='two')
@@ -447,7 +439,7 @@ class DecoratorTestCase(TestCase):
         url = reverse('class-cached-view')
 
         # Initial render
-        views.COUNTER = 1
+        cache.set("counter", 1)
         response = self.client.get(url)
         result = response.content.decode("utf-8")
         self.assertEqual(response.status_code, 200)
@@ -463,7 +455,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object one
-        views.COUNTER = 2
+        cache.set("counter", 2)
         one.title = 'Onxe'
         one.save()
         response = self.client.get(url)
@@ -481,7 +473,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object two
-        views.COUNTER = 3
+        cache.set("counter", 3)
         two.title = 'Twxo'
         two.save()
         response = self.client.get(url)
@@ -500,7 +492,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object three
-        views.COUNTER = 4
+        cache.set("counter", 4)
         three.title = 'Threxe'
         three.save()
         response = self.client.get(url)
@@ -520,7 +512,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Four' in result)
 
         # Change object four
-        views.COUNTER = 5
+        cache.set("counter", 5)
         four.title = 'Fouxr'
         four.save()
         response = self.client.get(url)
@@ -541,10 +533,10 @@ class DecoratorTestCase(TestCase):
         self.failIf('title = Four' in result)
 
         # Change object five. This object is never accessed in the template,
-        # only get_context_data of [Method|Class]CachedView. "counter four" and "counter
+        # only get_context_data of CachedView. "counter four" and "counter
         # five" are under cached_get and not in any ultracache tag, and are
         # thus the only counters incremented.
-        views.COUNTER = 6
+        cache.set("counter", 6)
         five.title = 'Fivxe'
         five.save()
         response = self.client.get(url)
@@ -565,7 +557,7 @@ class DecoratorTestCase(TestCase):
         self.failUnless('title = Fouxr' in result)
         self.failIf('title = Four' in result)
 
-    def test_decorator_header(self):
+    def test_header(self):
         """Test that decorator preserves headers
         """
         url = reverse('cached-header-view')
@@ -580,7 +572,7 @@ class DecoratorTestCase(TestCase):
         self.assertEqual(response._headers['content-type'], ('Content-Type', 'application/json'))
         self.assertEqual(response._headers['foo'], ('foo', 'bar'))
 
-    def test_decorator_cache_busting(self):
+    def test_cache_busting(self):
         """Test cache busting with and without random querystring param
         """
         url = reverse('bustable-cached-view')

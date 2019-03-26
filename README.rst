@@ -61,14 +61,16 @@ cache key ``inner_two`` remains unaffected::
         {% endultracache %}
     {% endultracache %}
 
-The ``cached_get`` view decorator
-*********************************
+The ``cached_get`` and ``ultracache`` view decorators
+*****************************************************
 
-``django-ultracache`` also provides a decorator ``cached_get`` to cache your views. The parameters
-follow the same rules as the ``ultracache`` template tag except they must all resolve. ``request.get_full_path()`` is
-always implicitly added to the cache key::
+``django-ultracache`` also provides decorators ``cached_get`` and
+``ultracache`` to cache your views. The parameters follow the same rules as the
+``ultracache`` template tag except they must all resolve.
+``request.get_full_path()`` is always implicitly added to the cache keyi. The
+``ultracache`` decorator is newer and cleaner, so use that where possible::
 
-    from ultracache.decorators import cached_get
+    from ultracache.decorators import cached_get, ultracache
 
 
     class CachedView(TemplateView):
@@ -77,6 +79,10 @@ always implicitly added to the cache key::
         @cached_get(300, "request.is_secure()", 456)
         def get(self, *args, **kwargs):
             return super(CachedView, self).get(*args, **kwargs)
+
+    @ultracache(300, "request.is_secure()", 456)
+    class AnotherCachedView(TemplateView):
+        template_name = "ultracache/cached_view.html"
 
 The ``cached_get`` decorator can be used in an URL pattern::
 
@@ -90,13 +96,14 @@ The ``cached_get`` decorator can be used in an URL pattern::
         name="cached-view"
     )
 
-Do not indiscriminately use the ``cached_get`` decorator. It only ever operates on GET requests
-but cannot know if the code being wrapped retrieves data from eg. the session. In such a case
-it will cache things it is not supposed to cache.
+Do not indiscriminately use the decorators. They only ever operate on GET
+requests but cannot know if the code being wrapped retrieves data from eg. the
+session. In such a case they will cache things they are not supposed to cache.
 
-If your view is used by more than one URL pattern then it is highly recommended to
-apply the ``cached_get`` decorator in the URL pattern. Applying it at class level
-may lead to cache collisions, especially if ``get_template_names`` is overridden.
+If your view is used by more than one URL pattern then it is highly recommended
+to apply the ``cached_get`` decorator in the URL pattern. Applying it directly
+to the ``get`` method may lead to cache collisions, especially if
+``get_template_names`` is overridden.
 
 Django Rest Framework viewset caching
 *************************************
