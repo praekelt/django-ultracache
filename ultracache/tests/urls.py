@@ -9,30 +9,35 @@ router = DefaultRouter()
 router.register(r"dummies", viewsets.DummyViewSet)
 
 urlpatterns = [
-    url(r'^api/', include(router.urls)),
+    url(r"^api/", include(router.urls)),
     url(
-        r'^render-view/$',
+        r"^render-view/$",
         views.RenderView.as_view(),
-        name='render-view'
+        name="render-view"
     ),
     url(
-        r'^cached-view/$',
-        views.CachedView.as_view(),
-        name='cached-view'
+        r"^method-cached-view/$",
+        views.MethodCachedView.as_view(),
+        name="method-cached-view"
     ),
     url(
-        r'^cached-header-view/$',
+        r"^class-cached-view/$",
+        views.ClassCachedView.as_view(),
+        name="class-cached-view"
+    ),
+    url(
+        r"^cached-header-view/$",
         views.CachedHeaderView.as_view(),
-        name='cached-header-view'
+        name="cached-header-view"
     ),
     url(
-        r'^bustable-cached-view/$',
+        r"^bustable-cached-view/$",
         views.BustableCachedView.as_view(),
-        name='bustable-cached-view'
+        name="bustable-cached-view"
     ),
     url(
-        r'^non-bustable-cached-view/$',
+        r"^non-bustable-cached-view/$",
         views.NonBustableCachedView.as_view(),
-        name='non-bustable-cached-view'
+        name="non-bustable-cached-view"
     ),
 ]

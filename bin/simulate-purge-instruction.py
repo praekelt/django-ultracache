@@ -1,4 +1,6 @@
-"""Simulate purge instructions"""
+"""Simulate purge instructions. Useful to test whether
+bin/cache-purge-consumer.py is working correctly."""
+
 from time import sleep
 
 import pika
