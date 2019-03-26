@@ -1,6 +1,6 @@
 Django Ultracache
 =================
-**Drop-in replacement for Django's template fragment caching. Cache views and Django Rest Framework viewsets. Automatic cache invalidation and reverse caching proxy purging.**
+**Cache views and template fragments. Automatic fine-grained cache invalidation from Django level, through proxies, to the browser.**
 
 .. figure:: https://travis-ci.org/praekelt/django-ultracache.svg?branch=develop
    :align: center
@@ -163,7 +163,7 @@ instruction to an associated reverse caching proxy. To run the script::
 
     virtualenv ve
     ./ve/bin/pip install -e .
-    ./ve/bin/python cache-purge-consumer.py -c config.yaml
+    ./ve/bin/python bin/cache-purge-consumer.py -c config.yaml
 
 The config file has these options:
 

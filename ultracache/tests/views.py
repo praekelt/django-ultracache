@@ -1,6 +1,6 @@
 from django.views.generic.base import TemplateView
 
-from ultracache.decorators import cached_get
+from ultracache.decorators import cached_get, ultracache
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
 
@@ -30,16 +30,12 @@ class RenderView(TemplateView):
         return context
 
 
-class CachedView(TemplateView):
+class BaseCachedView(TemplateView):
     template_name = "ultracache/cached_view.html"
-
-    @cached_get(300, "request.is_secure()", 456)
-    def get(self, *args, **kwargs):
-        return super(CachedView, self).get(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         global COUNTER
-        context = super(CachedView, self).get_context_data(**kwargs)
+        context = super(BaseCachedView, self).get_context_data(**kwargs)
         context["one"] = DummyModel.objects.get(code="one")
         context["two"] = DummyModel.objects.get(code="two")
         context["three"] = DummyForeignModel.objects.get(code="three")
@@ -50,6 +46,18 @@ class CachedView(TemplateView):
         dc = DummyModel.objects.get(code="five")
 
         return context
+
+
+class MethodCachedView(BaseCachedView):
+
+    @cached_get(300, "request.is_secure()", 456)
+    def get(self, *args, **kwargs):
+        return super(MethodCachedView, self).get(*args, **kwargs)
+
+
+@ultracache(300, "request.is_secure()", 456)
+class ClassCachedView(BaseCachedView):
+    pass
 
 
 class CachedHeaderView(TemplateView):
