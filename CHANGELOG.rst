@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.11.12
+-------
+#. Simpler class based decorator.
+#. Add Django 2.1 and Python 3.6 tests.
+
 1.11.11
 -------
 #. Add a test for tasks.
