@@ -175,26 +175,26 @@ instruction to an associated reverse caching proxy. To run the script::
 The config file has these options:
 
 #. rabbit-url
-Specify RabbitMQ connection parameters in the AMQP URL format
-``amqp://username:password@host:port/<virtual_host>[?query-string]``.
-*Optional. Defaults to ``amqp://guest:guest@127.0.0.1:5672/%2F``. Note the
-URL encoding for the path.*
+   Specify RabbitMQ connection parameters in the AMQP URL format
+   ``amqp://username:password@host:port/<virtual_host>[?query-string]``.
+   *Optional. Defaults to ``amqp://guest:guest@127.0.0.1:5672/%2F``. Note the
+   URL encoding for the path.*
 
 #. host
-A reverse caching proxy may be responsible for many domains (hosts), and
-ultracache will keep track of the host that is involved in a purge request;
-however, if you have a use case that does not supply a hostname, eg. doing a
-PURGE request via curl, then forcing a hostname solves the use case.
-*Optional.*
+   A reverse caching proxy may be responsible for many domains (hosts), and
+   ultracache will keep track of the host that is involved in a purge request;
+   however, if you have a use case that does not supply a hostname, eg. doing a
+   PURGE request via curl, then forcing a hostname solves the use case.
+   *Optional.*
 
 #. proxy-address
-The IP address or hostname of the reverse caching proxy.
-*Optional. Defaults to 127.0.0.1.*
+   The IP address or hostname of the reverse caching proxy.
+   *Optional. Defaults to 127.0.0.1.*
 
 #. logfile
-Set to a file to log all purge instructions. Specify ``stdout`` to log to
-standard out.
-*Optional.*
+   Set to a file to log all purge instructions. Specify ``stdout`` to log to
+   standard out.
+   *Optional.*
 
 Other settings
 **************
