@@ -14,6 +14,7 @@ from ultracache.utils import cache_meta, get_current_site_pk
 
 
 def cached_get(timeout, *params):
+    """Decorator applied specifically to a view's get method"""
 
     def decorator(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
@@ -27,7 +28,7 @@ def cached_get(timeout, *params):
             if not hasattr(_thread_locals, "ultracache_request"):
                 setattr(_thread_locals, "ultracache_request", request)
 
-           # If request not GET or HEAD never cache
+            # If request not GET or HEAD never cache
             if request.method.lower() not in ("get", "head"):
                 return view_func(view_or_request, *args, **kwargs)
 
@@ -97,4 +98,21 @@ def cached_get(timeout, *params):
             return response
 
         return _wrapped_view
+    return decorator
+
+
+def ultracache(timeout, *params):
+    """Decorator applied to a view class. The get method is decorated
+    implicitly."""
+
+    def decorator(cls):
+        class WrappedClass(cls):
+            def __init__(self, *args, **kwargs):
+                super(WrappedClass, self).__init__(*args, **kwargs)
+
+            @cached_get(timeout, *params)
+            def get(self, *args, **kwargs):
+                return super(WrappedClass, self).get(*args, **kwargs)
+
+        return WrappedClass
     return decorator

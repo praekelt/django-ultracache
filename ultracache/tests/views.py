@@ -1,14 +1,9 @@
+from django.core.cache import cache
 from django.views.generic.base import TemplateView
 
-from ultracache.decorators import cached_get
+from ultracache.decorators import cached_get, ultracache
 from ultracache.tests.models import DummyModel, DummyForeignModel, \
     DummyOtherModel
-
-
-# The counter is used to track the iteration that a cached block was last
-# rendered. Global var is easiest way to influence the counter from a test.
-# Remember, adding querystring to request leads to a new cache key.
-COUNTER = 1
 
 
 class RenderView(TemplateView):
@@ -30,26 +25,37 @@ class RenderView(TemplateView):
         return context
 
 
-class CachedView(TemplateView):
+class BaseCachedView(TemplateView):
     template_name = "ultracache/cached_view.html"
 
-    @cached_get(300, "request.is_secure()", 456)
-    def get(self, *args, **kwargs):
-        return super(CachedView, self).get(*args, **kwargs)
-
     def get_context_data(self, **kwargs):
-        global COUNTER
-        context = super(CachedView, self).get_context_data(**kwargs)
+        context = super(BaseCachedView, self).get_context_data(**kwargs)
         context["one"] = DummyModel.objects.get(code="one")
         context["two"] = DummyModel.objects.get(code="two")
         context["three"] = DummyForeignModel.objects.get(code="three")
         context["four"] = DummyModel.objects.get(code="four")
-        context["counter"] = COUNTER
+
+        # The counter is used to track the iteration that a cached block was
+        # last rendered. Setting the value on the cache is the easiest way to
+        # influence the counter from a test.
+        context["counter"] = cache.get("counter", 1)
 
         # We never actually do anything with five, but cached_get is aware of it
         dc = DummyModel.objects.get(code="five")
 
         return context
+
+
+class MethodCachedView(BaseCachedView):
+
+    @cached_get(300, "request.is_secure()", 456)
+    def get(self, *args, **kwargs):
+        return super(MethodCachedView, self).get(*args, **kwargs)
+
+
+@ultracache(300, "request.is_secure()", 456)
+class ClassCachedView(BaseCachedView):
+    pass
 
 
 class CachedHeaderView(TemplateView):

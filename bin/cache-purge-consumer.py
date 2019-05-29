@@ -1,3 +1,6 @@
+"""Subscribe to RabbitMQ and listen for purge instructions continuously. Manage
+this script through eg. supervisor."""
+
 import json
 import traceback
 from multiprocessing.pool import ThreadPool
