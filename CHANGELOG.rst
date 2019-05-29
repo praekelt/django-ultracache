@@ -1,6 +1,12 @@
 Changelog
 =========
 
+next
+----
+
+#. Remove dependency on the sites framework everywhere. The sites framework is still automatically
+   considered if an installed app.
+
 1.11.12
 -------
 #. Simpler class based decorator.

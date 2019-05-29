@@ -2,7 +2,6 @@
 
 from django import template
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.http.cookie import SimpleCookie
 from django.test import TestCase
@@ -18,7 +17,8 @@ from ultracache.tests.utils import dummy_proxy
 
 
 class TemplateTagsTestCase(TestCase):
-    fixtures = ["sites.json"]
+    if "django.contrib.sites" in settings.INSTALLED_APPS:
+        fixtures = ["sites.json"]
 
     @classmethod
     def setUpClass(cls):
@@ -27,36 +27,40 @@ class TemplateTagsTestCase(TestCase):
         cls.request = cls.factory.get('/')
         cache.clear()
         dummy_proxy.clear()
-        cls.first_site = Site.objects.all().first()
-        cls.second_site = Site.objects.all().last()
 
-    def test_sites(self):
-        # Caching on same site
-        t = template.Template("{% load ultracache_tags %}\
-            {% ultracache 1200 'test_ultracache' %}1{% endultracache %}"
-        )
-        context = template.Context({'request' : self.request})
-        result1 = t.render(context)
-        t = template.Template("{% load ultracache_tags %}\
-            {% ultracache 1200 'test_ultracache' %}2{% endultracache %}"
-        )
-        context = template.Context({'request' : self.request})
-        result2 = t.render(context)
-        self.failUnlessEqual(result1, result2)
+    if "django.contrib.sites" in settings.INSTALLED_APPS:
+        def test_sites(self):
+            from django.contrib.sites.models import Site
 
-        # Caching on different sites
-        t = template.Template("{% load ultracache_tags %}\
-            {% ultracache 1200 'test_ultracache' %}1{% endultracache %}"
-        )
-        context = template.Context({'request' : self.request})
-        result1 = t.render(context)
-        with override_settings(SITE_ID=self.second_site.id):
-            t = template.Template("{%% load ultracache_tags %%}\
-                {%% ultracache 1200 'test_ultracache' %%}%s{%% endultracache %%}" % self.second_site.id
+            first_site = Site.objects.all().first()
+            second_site = Site.objects.all().last()
+
+            # Caching on same site
+            t = template.Template("{% load ultracache_tags %}\
+                {% ultracache 1200 'test_ultracache' %}1{% endultracache %}"
+            )
+            context = template.Context({'request' : self.request})
+            result1 = t.render(context)
+            t = template.Template("{% load ultracache_tags %}\
+                {% ultracache 1200 'test_ultracache' %}2{% endultracache %}"
             )
             context = template.Context({'request' : self.request})
             result2 = t.render(context)
-            self.failIfEqual(result1, result2)
+            self.failUnlessEqual(result1, result2)
+
+            # Caching on different sites
+            t = template.Template("{% load ultracache_tags %}\
+                {% ultracache 1200 'test_ultracache' %}1{% endultracache %}"
+            )
+            context = template.Context({'request' : self.request})
+            result1 = t.render(context)
+            with override_settings(SITE_ID=second_site.id):
+                t = template.Template("{%% load ultracache_tags %%}\
+                    {%% ultracache 1200 'test_ultracache' %%}%s{%% endultracache %%}" % second_site.id
+                )
+                context = template.Context({'request' : self.request})
+                result2 = t.render(context)
+                self.failIfEqual(result1, result2)
 
     def test_variables(self):
         # Check that undefined variables do not break caching
@@ -86,21 +90,21 @@ class TemplateTagsTestCase(TestCase):
         self.failUnlessEqual(result1, result2)
 
         # Check that large integer variables do not break caching
-        t = template.Template("{%% load ultracache_tags %%}\
-            {%% ultracache 1200 'test_ultracache_large' 565417614189797377 %%}%s{%% endultracache %%}" % self.second_site.id
+        t = template.Template("{% load ultracache_tags %}\
+            {% ultracache 1200 'test_ultracache_large' 565417614189797377 %}abcde{% endultracache %}"
         )
         context = template.Context({'request' : self.request})
         result1 = t.render(context)
-        t = template.Template("{%% load ultracache_tags %%}\
-            {%% ultracache 1200 'test_ultracache_large' 565417614189797377 %%}%s{%% endultracache %%}" % self.second_site.id
+        t = template.Template("{% load ultracache_tags %}\
+            {% ultracache 1200 'test_ultracache_large' 565417614189797377 %}abcde{% endultracache %}"
         )
         context = template.Context({'request' : self.request})
         result2 = t.render(context)
         self.failUnlessEqual(result1, result2)
 
     def test_context_without_request(self):
-        t = template.Template("{%% load ultracache_tags %%}\
-            {%% ultracache 1200 'test_ultracache_undefined' aaa %%}%s{%% endultracache %%}" % self.first_site.id
+        t = template.Template("{% load ultracache_tags %}\
+            {% ultracache 1200 'test_ultracache_undefined' aaa %}abcde{% endultracache %}"
         )
         context = template.Context()
         self.assertRaises(KeyError, t.render, context)
@@ -281,13 +285,8 @@ class TemplateTagsTestCase(TestCase):
 
 
 class DecoratorTestCase(TestCase):
-    fixtures = ["sites.json"]
-
-    @classmethod
-    def setUpClass(cls):
-        super(DecoratorTestCase, cls).setUpClass()
-        cls.first_site = Site.objects.all().first()
-        cls.second_site = Site.objects.all().last()
+    if "django.contrib.sites" in settings.INSTALLED_APPS:
+        fixtures = ["sites.json"]
 
     def setUp(self):
         super(DecoratorTestCase, self).setUp()
