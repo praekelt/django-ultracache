@@ -1,6 +1,6 @@
 Django Ultracache
 =================
-**Cache views and template fragments. Automatic fine-grained cache invalidation from Django level, through proxies, to the browser.**
+**Cache views, template fragments and arbitrary Python code. Monitor Django object changes to perform automatic fine-grained cache invalidation from Django level, through proxies, to the browser.**
 
 .. figure:: https://travis-ci.org/praekelt/django-ultracache.svg?branch=develop
    :align: center
@@ -240,10 +240,14 @@ If you only need to consider some cookies then set::
 How does it work?
 -----------------
 
-``django-ultracache`` monkey patches ``django.template.base.Variable._resolve_lookup`` to make a record of
-model objects as they are resolved. The ``ultracache`` template tag inspects the list of objects contained
-within it and keeps a registry in Django's caching backend. A ``post_save`` signal handler monitors objects
-for changes and expires the appropriate cache keys.
+``django-ultracache`` monkey patches
+``django.template.base.Variable._resolve_lookup`` and
+``django.db.models.Model.__getattribute__`` to make a record of model objects
+as they are resolved. The ``ultracache`` template tag, ``ultracache`` decorator
+and ``ultracache`` context manager inspect the list of objects contained
+within them and keep a registry in Django's caching backend. A ``post_save``
+signal handler monitors objects for changes and expires the appropriate cache
+keys.
 
 Tips
 ----

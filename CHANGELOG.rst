@@ -6,6 +6,8 @@ next
 
 #. Remove dependency on the sites framework everywhere. The sites framework is still automatically
    considered if an installed app.
+#. Do not store metadata in the request anymore but in a list on thread locals.
+#. Introduce a context manager to subject arbitrary pieces of Python code to caching.
 
 1.11.12
 -------

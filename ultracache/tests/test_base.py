@@ -292,11 +292,11 @@ class DecoratorTestCase(TestCase):
         super(DecoratorTestCase, self).setUp()
         cache.clear()
         dummy_proxy.clear()
-        # Ultracache is built with the understanding that we have one view and
-        # one request. Unit tests don't respect that, so clear thread locals
-        # manually.
-        if hasattr(_thread_locals, "ultracache_request"):
-            delattr(_thread_locals, "ultracache_request")
+        # Ultracache is built with the understanding that we have one thread
+        # that exists only during a request. Unit tests don't respect that
+        # because they are long running, so clear thread locals manually.
+        if hasattr(_thread_locals, "ultracache_recorder"):
+            delattr(_thread_locals, "ultracache_recorder")
 
     def test_method(self):
         """Render template through a view with get method decorated with
