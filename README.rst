@@ -48,7 +48,7 @@ Python::
         codes = uc.cached
     else:
         blue = Color.objects.get(slug="blue")
-        codes = blue.compute_valid_hex_codes
+        codes = blue.compute_valid_hex_codes()
         uc.cache(codes)
     print(codes)
 
