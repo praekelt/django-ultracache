@@ -9,6 +9,48 @@ Django Ultracache
 .. contents:: Contents
     :depth: 5
 
+Overview
+--------
+
+Cache views, template fragments and arbitrary Python code. Once cached we
+either avoid database queries and expensive computations, depending on the use
+case. In all cases affected caches are automatically expired when objects "red"
+or "blue" are modified, without us having to add "red" or "blue" to the cache.
+
+View::
+
+    from ultracache.decorators import cached_get, ultracache
+
+    @ultracache(300)
+    class MyView(TemplateView):
+        template_name = "my_view.html"
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            red = Color.objects.get(slug="red")
+            context["blue"] = blue = Color.objects.get(slug="blue")
+            return context
+
+Template::
+    {# variable "blue" is in scope #}
+    {% load ultracache_tags %}
+    {% ultracache 300 "some-identifier" %}
+        {# expensive properties #}
+        {{ blue.compute_valid_hex_codes }}
+        {{ blue.name_in_all_languages }}
+    {% endultracache %}
+
+Python::
+
+    uc = Ultracache(300, "another-identifier")
+    if uc:
+        codes = uc.cached
+    else:
+        blue = Color.objects.get(slug="blue")
+        codes = blue.compute_valid_hex_codes
+        uc.cache(codes)
+    print(codes)
+
 Installation
 ------------
 
@@ -74,7 +116,7 @@ The ``cached_get`` and ``ultracache`` view decorators
 
 
     class CachedView(TemplateView):
-        template_name = "ultracache/cached_view.html"
+        template_name = "cached_view.html"
 
         @cached_get(300, "request.is_secure()", 456)
         def get(self, *args, **kwargs):
@@ -82,7 +124,7 @@ The ``cached_get`` and ``ultracache`` view decorators
 
     @ultracache(300, "request.is_secure()", 456)
     class AnotherCachedView(TemplateView):
-        template_name = "ultracache/cached_view.html"
+        template_name = "cached_view.html"
 
 The ``cached_get`` decorator can be used in an URL pattern::
 

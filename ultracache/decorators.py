@@ -67,7 +67,7 @@ def cached_get(timeout, *params):
 
             s = ":".join([str(l) for l in li])
             hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
-            cache_key = "ucache-get-%s" % hashed
+            cache_key = "ucache-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:
                 # The get view as outermost caller may bluntly set recorder to empty

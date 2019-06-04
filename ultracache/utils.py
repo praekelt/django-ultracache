@@ -1,8 +1,11 @@
+import hashlib
 from collections import OrderedDict
 
 from django.core.cache import cache
 from django.conf import settings
 from django.http.cookie import SimpleCookie
+
+from ultracache import _thread_locals
 
 
 # The metadata itself can't be allowed to grow endlessly. This value is the
@@ -231,3 +234,39 @@ def get_current_site_pk(request):
     except ImportError:
         from django.contrib.sites.models import get_current_site
     return get_current_site(request).pk
+
+
+class EmptyMarker:
+    pass
+empty_marker_1 = EmptyMarker()
+empty_marker_2 = EmptyMarker()
+
+
+class Ultracache:
+    """Cache arbitrary pirces of Python code.
+    """
+
+    def __init__(self, timeout, name, *params, request=None):
+        self.timeout = timeout
+        self.request = request
+        self._cached = empty_marker_1
+        s = ":".join([name] + [str(p) for p in params])
+        hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
+        self.cache_key = "ucache-%s" % hashed
+
+    @property
+    def cached(self):
+        if self._cached is empty_marker_1:
+            self._cached = cache.get(self.cache_key, empty_marker_2)
+        return self._cached
+
+    def __bool__(self):
+        return self.cached is not empty_marker_2
+
+    def cache(self, value):
+        cache.set(self.cache_key, value, self.timeout)
+        cache_meta(
+            _thread_locals.ultracache_recorder,
+            self.cache_key,
+            request=self.request
+        )
