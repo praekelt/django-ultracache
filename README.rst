@@ -27,30 +27,35 @@ View::
 
         def get_context_data(self, **kwargs):
             context = super().get_context_data(**kwargs)
+            # Note we never use red
             red = Color.objects.get(slug="red")
-            context["blue"] = blue = Color.objects.get(slug="blue")
+            # For our example color_slug is blue
+            context["color"] = Color.objects.get(slug=kwargs["color_slug"])
             return context
 
 Template::
 
-    {# variable "blue" is in scope #}
+    {# variable "color" is the object "blue" #}
     {% load ultracache_tags %}
-    {% ultracache 300 "some-identifier" %}
+    {% ultracache 300 "color-info" color.pk %}
         {# expensive properties #}
-        {{ blue.compute_valid_hex_codes }}
-        {{ blue.name_in_all_languages }}
+        {{ color.compute_valid_hex_codes }}
+        {{ color.name_in_all_languages }}
     {% endultracache %}
 
 Python::
 
     from ultracache.utils import Ultracache
 
-    uc = Ultracache(300, "another-identifier")
+    ...
+
+    color_slug = request.GET["color_slug"]
+    uc = Ultracache(300, "another-identifier", color_slug)
     if uc:
         codes = uc.cached
     else:
-        blue = Color.objects.get(slug="blue")
-        codes = blue.compute_valid_hex_codes()
+        color = Color.objects.get(slug=color_slug)
+        codes = color.compute_valid_hex_codes()
         uc.cache(codes)
     print(codes)
 
@@ -79,40 +84,13 @@ Features
 Usage
 -----
 
-The ``ultracache`` template tag
-*******************************
-
-``django-ultracache`` provides a template tag ``{% ultracache %}`` that functions like Django's
-standard cache template tag, with these exceptions.
-
-Simplest use case::
-
-    {% load ultracache_tags %}
-    {% ultracache 3600 "my_identifier" object 123 undefined "string" %}
-        {{ object.title }}
-    {% endultracache %}
-
-The tag can be nested. ``ultracache`` is aware of all model objects that are subjected to its caching.
-In this example cache keys ``outer`` and ``inner_one`` are expired when object one is changed but
-cache key ``inner_two`` remains unaffected::
-
-    {% load ultracache_tags %}
-    {% ultracache 1200 "outer" %}
-        {% ultracache 1200 "inner_one" %}
-            title = {{ one.title }}
-        {% endultracache %}
-        {% ultracache 1200 "inner_two" %}
-            title = {{ two.title }}
-        {% endultracache %}
-    {% endultracache %}
-
 The ``cached_get`` and ``ultracache`` view decorators
 *****************************************************
 
 ``django-ultracache`` also provides decorators ``cached_get`` and
 ``ultracache`` to cache your views. The parameters follow the same rules as the
 ``ultracache`` template tag except they must all resolve.
-``request.get_full_path()`` is always implicitly added to the cache keyi. The
+``request.get_full_path()`` is always implicitly added to the cache key. The
 ``ultracache`` decorator is newer and cleaner, so use that where possible::
 
     from ultracache.decorators import cached_get, ultracache
@@ -149,6 +127,43 @@ If your view is used by more than one URL pattern then it is highly recommended
 to apply the ``cached_get`` decorator in the URL pattern. Applying it directly
 to the ``get`` method may lead to cache collisions, especially if
 ``get_template_names`` is overridden.
+
+The ``ultracache`` template tag
+*******************************
+
+``django-ultracache`` provides a template tag ``{% ultracache %}`` that
+functions much like Django's standard cache template tag; however, it takes the
+sites framework into consideration, allowing different caching per site, and it
+handles undefined variables.
+
+Simplest use case::
+
+    {% load ultracache_tags %}
+    {% ultracache 3600 "my_identifier" object 123 undefined "string" %}
+        {{ object.title }}
+    {% endultracache %}
+
+The tag can be nested. ``ultracache`` is aware of all model objects that are subjected to its caching.
+In this example cache keys ``outer`` and ``inner_one`` are expired when object one is changed but
+cache key ``inner_two`` remains unaffected::
+
+    {% load ultracache_tags %}
+    {% ultracache 1200 "outer" %}
+        {% ultracache 1200 "inner_one" %}
+            title = {{ one.title }}
+        {% endultracache %}
+        {% ultracache 1200 "inner_two" %}
+            title = {{ two.title }}
+        {% endultracache %}
+    {% endultracache %}
+
+Specifying a good cache key
+***************************
+
+The cache key decides whether a piece of code or template is going to be evaluated further. The
+cache key must therefore accurately and minimally describe what is being subjected to caching.
+
+todo
 
 Django Rest Framework viewset caching
 *************************************
