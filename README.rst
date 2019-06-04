@@ -43,6 +43,8 @@ Template::
 
 Python::
 
+    from ultracache.utils import Ultracache
+
     uc = Ultracache(300, "another-identifier")
     if uc:
         codes = uc.cached
