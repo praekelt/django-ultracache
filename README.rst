@@ -32,6 +32,7 @@ View::
             return context
 
 Template::
+
     {# variable "blue" is in scope #}
     {% load ultracache_tags %}
     {% ultracache 300 "some-identifier" %}
