@@ -243,7 +243,7 @@ empty_marker_2 = EmptyMarker()
 
 
 class Ultracache:
-    """Cache arbitrary pirces of Python code.
+    """Cache arbitrary pieces of Python code.
     """
 
     def __init__(self, timeout, name, *params, request=None):
@@ -253,6 +253,8 @@ class Ultracache:
         s = ":".join([name] + [str(p) for p in params])
         hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
         self.cache_key = "ucache-%s" % hashed
+        self.start_index = len(_thread_locals.ultracache_recorder) 
+        self.used = False
 
     @property
     def cached(self):
@@ -264,9 +266,15 @@ class Ultracache:
         return self.cached is not empty_marker_2
 
     def cache(self, value):
+        if self.used:
+            raise RuntimeError(
+                "The cache method may only be called once per Ultracache object."
+            )
         cache.set(self.cache_key, value, self.timeout)
         cache_meta(
             _thread_locals.ultracache_recorder,
             self.cache_key,
+            start_index=self.start_index,
             request=self.request
         )
+        self.used = True

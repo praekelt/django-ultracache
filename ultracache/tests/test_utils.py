@@ -15,9 +15,11 @@ class UtilsTestCase(TestCase):
         super(UtilsTestCase, self).setUp()
         cache.clear()
 
-    def test_context_manager(self):
-        one = DummyModel.objects.create(title='One', code='one')
+    def test_context_manager_like_thing(self):
+        one = DummyModel.objects.create(title="One", code="one")
+        two = DummyModel.objects.create(title="Two", code="two")
 
+        # Caching with object one
         uc = Ultracache(3600, "a", "b")
         self.failIf(uc)
         uc.cache(one.title)
@@ -30,4 +32,25 @@ class UtilsTestCase(TestCase):
         one.save()
 
         uc = Ultracache(3600, "a", "b")
+        self.failIf(uc)
+
+        # Caching with object two. Ensure object one doesn't bleed into this
+        # section.
+        uc = Ultracache(3600, "c", "d")
+        self.failIf(uc)
+        uc.cache(two.title)
+
+        uc = Ultracache(3600, "c", "d")
+        self.failUnless(uc)
+        self.assertEqual(uc.cached, two.title)
+
+        two.title = "Onez"
+        one.save()
+        uc = Ultracache(3600, "c", "d")
+        self.failUnless(uc)
+
+        two.title = "Twox"
+        two.save()
+
+        uc = Ultracache(3600, "c", "d")
         self.failIf(uc)
