@@ -157,7 +157,7 @@ def drf_cache(func):
         response = func(context, request, *args, **kwargs)
 
         if do_cache:
-            cache_meta(request, cache_key)
+            cache_meta(_thread_locals.ultracache_recorder, cache_key, request=request)
             response = context.finalize_response(request, response, *args, **kwargs)
             response.render()
             timeout = viewset_settings.get("timeout", 300)
@@ -211,20 +211,19 @@ if HAS_DRF:
     ListSerializer.to_representation = _listserializer(ListSerializer.to_representation)
 
 
-# Dark magic enables us to record object access. This enables cached_get to
-# keep track of objects accessed in get_context_data itself and not just in the
-# templates being rendered.
+# Dark magic enables us to record object access. This enables us keep track of
+# objects accessed in any Python code and not just in the templates being
+# rendered.
 
 def my__getattribute__(self, name):
-    request = getattr(_thread_locals, "ultracache_request", None)
-    if hasattr(request, "_ultracache") and \
-        not hasattr(request, "_ultracache_attr_marker"):
-        setattr(request, "_ultracache_attr_marker", 1)
+    if hasattr(_thread_locals, "ultracache_recorder") and \
+        not hasattr(_thread_locals, "_ultracache_attr_marker"):
+        setattr(_thread_locals, "_ultracache_attr_marker", 1)
         if hasattr(self, "pk"):
             # get_for_model itself is cached
             ct = ContentType.objects.get_for_model(self.__class__)
-            request._ultracache.append((ct.id, self.pk))
-        delattr(request, "_ultracache_attr_marker")
+            _thread_locals.ultracache_recorder.append((ct.id, self.pk))
+        delattr(_thread_locals, "_ultracache_attr_marker")
     return super(Model, self).__getattribute__(name)
 
 Model.__getattribute__ = my__getattribute__

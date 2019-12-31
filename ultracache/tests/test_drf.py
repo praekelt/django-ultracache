@@ -14,7 +14,8 @@ from ultracache.tests.viewsets import DummyViewSet
 
 
 class DRFTestCase(TestCase):
-    fixtures = ["sites.json"]
+    if "django.contrib.sites" in settings.INSTALLED_APPS:
+        fixtures = ["sites.json"]
 
     @classmethod
     def setUpTestData(cls):

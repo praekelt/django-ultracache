@@ -25,9 +25,6 @@ def cached_get(timeout, *params):
             # used in urls.py.
             request = getattr(view_or_request, "request", view_or_request)
 
-            if not hasattr(_thread_locals, "ultracache_request"):
-                setattr(_thread_locals, "ultracache_request", request)
-
             # If request not GET or HEAD never cache
             if request.method.lower() not in ("get", "head"):
                 return view_func(view_or_request, *args, **kwargs)
@@ -70,11 +67,11 @@ def cached_get(timeout, *params):
 
             s = ":".join([str(l) for l in li])
             hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
-            cache_key = "ucache-get-%s" % hashed
+            cache_key = "ucache-%s" % hashed
             cached = cache.get(cache_key, None)
             if cached is None:
-                # The get view as outermost caller may bluntly set _ultracache
-                request._ultracache = []
+                # The get view as outermost caller may bluntly set recorder to empty
+                _thread_locals.ultracache_recorder = []
                 response = view_func(view_or_request, *args, **kwargs)
                 content = None
                 if isinstance(response, TemplateResponse):
@@ -88,7 +85,7 @@ def cached_get(timeout, *params):
                         {"content": content, "headers": headers},
                         timeout
                     )
-                    cache_meta(request, cache_key)
+                    cache_meta(_thread_locals.ultracache_recorder, cache_key, request=request)
             else:
                 response = HttpResponse(cached["content"])
                 # Headers has a non-obvious format

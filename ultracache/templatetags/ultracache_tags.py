@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.conf import settings
 
+from ultracache import _thread_locals
 from ultracache.utils import cache_meta, get_current_site_pk
 
 
@@ -50,11 +51,11 @@ class UltraCacheNode(CacheNode):
         # Set a list on the request. Django's template rendering is recursive
         # and single threaded so we can use a list to keep track of contained
         # objects.
-        if not hasattr(request, "_ultracache"):
-            setattr(request, "_ultracache", [])
+        if not hasattr(_thread_locals, "ultracache_recorder"):
+            setattr(_thread_locals, "ultracache_recorder", [])
             start_index = 0
         else:
-            start_index = len(request._ultracache)
+            start_index = len(_thread_locals.ultracache_recorder)
 
         vary_on = []
         if "django.contrib.sites" in settings.INSTALLED_APPS:
@@ -74,12 +75,12 @@ class UltraCacheNode(CacheNode):
         if value is None:
             value = self.nodelist.render(context)
             cache.set(cache_key, value, expire_time)
-            cache_meta(request, cache_key, start_index)
+            cache_meta(_thread_locals.ultracache_recorder, cache_key, start_index, request=request)
         else:
             # A cached result was found. Set tuples in _ultracache manually so
             # outer template tags are aware of contained objects.
             for tu in cache.get(cache_key + "-objs", []):
-                request._ultracache.append(tu)
+                _thread_locals.ultracache_recorder.append(tu)
 
         return value
 

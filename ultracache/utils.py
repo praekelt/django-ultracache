@@ -1,13 +1,11 @@
+import hashlib
 from collections import OrderedDict
 
 from django.core.cache import cache
-from django.contrib.sites.models import Site
-try:
-    from django.contrib.sites.shortcuts import get_current_site
-except ImportError:
-    from django.contrib.sites.models import get_current_site
 from django.conf import settings
 from django.http.cookie import SimpleCookie
+
+from ultracache import _thread_locals
 
 
 # The metadata itself can't be allowed to grow endlessly. This value is the
@@ -60,28 +58,30 @@ def reduce_list_size(li):
     return keep, toss
 
 
-def cache_meta(request, cache_key, start_index=0):
+def cache_meta(recorder, cache_key, start_index=0, request=None):
     """Inspect request for objects in _ultracache and set appropriate entries
     in Django's cache."""
 
-    path = request.get_full_path()
-    # todo: cache headers on the request since they never change during the
-    # request.
+    path = None
+    if request is not None:
+        path = request.get_full_path()
+        # todo: cache headers on the recorder since they never change during the
+        # request.
 
-    # Reduce headers to the subset as defined by the settings
-    headers = OrderedDict()
-    for k, v in sorted(request.META.items()):
-        if (k == "HTTP_COOKIE") and CONSIDER_COOKIES:
-            cookie = SimpleCookie()
-            cookie.load(v)
-            headers["cookie"] = "; ".join([
-                "%s=%s" % (k, morsel.value) for k, morsel \
-                    in sorted(cookie.items()) if k in CONSIDER_COOKIES
-            ])
-        elif k.startswith("HTTP_"):
-            k = k[5:].replace("_", "-").lower()
-            if k in CONSIDER_HEADERS:
-                headers[k] = v
+        # Reduce headers to the subset as defined by the settings
+        headers = OrderedDict()
+        for k, v in sorted(request.META.items()):
+            if (k == "HTTP_COOKIE") and CONSIDER_COOKIES:
+                cookie = SimpleCookie()
+                cookie.load(v)
+                headers["cookie"] = "; ".join([
+                    "%s=%s" % (k, morsel.value) for k, morsel \
+                        in sorted(cookie.items()) if k in CONSIDER_COOKIES
+                ])
+            elif k.startswith("HTTP_"):
+                k = k[5:].replace("_", "-").lower()
+                if k in CONSIDER_HEADERS:
+                    headers[k] = v
 
     # Lists needed for cache.get_many
     to_set_get_keys = []
@@ -98,7 +98,7 @@ def cache_meta(request, cache_key, start_index=0):
     to_delete = []
     to_set_objects = []
 
-    for ctid, obj_pk in request._ultracache[start_index:]:
+    for ctid, obj_pk in recorder[start_index:]:
         # The object appears in these cache entries. If the object is modified
         # then these cache entries are deleted.
         key = "ucache-%s-%s" % (ctid, obj_pk)
@@ -154,10 +154,11 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_paths[key] = keep
-        if [path, headers] not in keep:
-            if key not in to_set_paths:
-                to_set_paths[key] = keep
-            to_set_paths[key] = to_set_paths[key] + [[path, headers]]
+        if path is not None:
+            if [path, headers] not in keep:
+                if key not in to_set_paths:
+                    to_set_paths[key] = keep
+                to_set_paths[key] = to_set_paths[key] + [[path, headers]]
     if to_set_paths == di:
         to_set_paths = {}
 
@@ -185,11 +186,12 @@ def cache_meta(request, cache_key, start_index=0):
             keep, toss = reduce_list_size(v)
             if toss:
                 to_set_content_types_paths[key] = keep
-        if [path, headers] not in keep:
-            if key not in to_set_content_types_paths:
-                to_set_content_types_paths[key] = keep
-            to_set_content_types_paths[key] = to_set_content_types_paths[key] \
-                + [[path, headers]]
+        if path is not None:
+            if [path, headers] not in keep:
+               if key not in to_set_content_types_paths:
+                    to_set_content_types_paths[key] = keep
+               to_set_content_types_paths[key] = to_set_content_types_paths[key] \
+                    + [[path, headers]]
     if to_set_content_types_paths == di:
         to_set_content_types_paths = {}
 
@@ -226,4 +228,53 @@ def cache_meta(request, cache_key, start_index=0):
 def get_current_site_pk(request):
     """Seemingly pointless function is so calling code doesn't have to worry
     about the import issues between Django 1.6 and later."""
+    from django.contrib.sites.models import Site
+    try:
+        from django.contrib.sites.shortcuts import get_current_site
+    except ImportError:
+        from django.contrib.sites.models import get_current_site
     return get_current_site(request).pk
+
+
+class EmptyMarker:
+    pass
+empty_marker_1 = EmptyMarker()
+empty_marker_2 = EmptyMarker()
+
+
+class Ultracache:
+    """Cache arbitrary pieces of Python code.
+    """
+
+    def __init__(self, timeout, name, *params, request=None):
+        self.timeout = timeout
+        self.request = request
+        self._cached = empty_marker_1
+        s = ":".join([name] + [str(p) for p in params])
+        hashed = hashlib.md5(s.encode("utf-8")).hexdigest()
+        self.cache_key = "ucache-%s" % hashed
+        self.start_index = len(_thread_locals.ultracache_recorder) 
+        self.used = False
+
+    @property
+    def cached(self):
+        if self._cached is empty_marker_1:
+            self._cached = cache.get(self.cache_key, empty_marker_2)
+        return self._cached
+
+    def __bool__(self):
+        return self.cached is not empty_marker_2
+
+    def cache(self, value):
+        if self.used:
+            raise RuntimeError(
+                "The cache method may only be called once per Ultracache object."
+            )
+        cache.set(self.cache_key, value, self.timeout)
+        cache_meta(
+            _thread_locals.ultracache_recorder,
+            self.cache_key,
+            start_index=self.start_index,
+            request=self.request
+        )
+        self.used = True
