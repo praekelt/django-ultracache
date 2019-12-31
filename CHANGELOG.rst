@@ -1,9 +1,8 @@
 Changelog
 =========
 
-next
-----
-
+2.0.0
+-----
 #. Remove dependency on the sites framework everywhere. The sites framework is still automatically
    considered if an installed app.
 #. Do not store metadata in the request anymore but in a list on thread locals.
