@@ -1,9 +1,11 @@
 PLEASE NOTE!!
+=================
 
 This repo has moved to this fork: https://github.com/hedleyroos/django-ultracache and will be maintained there.
 
+-----
 
-
+-----
 
 Django Ultracache
 =================
