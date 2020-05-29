@@ -1,3 +1,10 @@
+PLEASE NOTE!!
+
+This repo has moved to this fork: https://github.com/hedleyroos/django-ultracache and will be maintained there.
+
+
+
+
 Django Ultracache
 =================
 **Cache views, template fragments and arbitrary Python code. Monitor Django object changes to perform automatic fine-grained cache invalidation from Django level, through proxies, to the browser.**
